@@ -18,8 +18,8 @@ public class JwtUtil {
     @Value("${app.jwt.secret}")
     private String secretKey;  // Secret key (should be Base64-encoded) from application.properties
 
-    @Value("${app.jwt.expiration}")
-    private long jwtExpiration;  // Expiration time in milliseconds
+
+    private static final long jwtExpiration = 86400000L;  // Expiration time in milliseconds
 
     // Generates a JWT token for the given username.
     public String generateToken(String username) {
