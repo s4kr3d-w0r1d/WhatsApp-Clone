@@ -16,57 +16,45 @@ import java.util.function.Function;
 public class JwtUtil {
 
     @Value("${app.jwt.secret}")
-    private String secretKey;  // Secret key (should be Base64-encoded) from application.properties
+    private String secretKey; // This must be a valid Base64-encoded string
 
+    // Hard-coded expiration time (24 hours in milliseconds)
+    private static final long EXPIRATION_TIME = 86400000L;
 
-    private static final long jwtExpiration = 86400000L;  // Expiration time in milliseconds
-
-    // Generates a JWT token for the given username.
-    public String generateToken(String username) {
-        // Decode the Base64 secret key into a byte array.
+    public String generateToken(String subject) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        // Generate a cryptographic key suitable for HMAC-SHA algorithms.
         Key key = Keys.hmacShaKeyFor(keyBytes);
-
         return Jwts.builder()
-                .setSubject(username)  // Set the 'sub' (subject) claim to the username.
-                .setIssuedAt(new Date())  // Set the token issuance time.
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))  // Set token expiration.
-                .signWith(key, SignatureAlgorithm.HS256)  // Sign the token with our key and the HS256 algorithm.
-                .compact();  // Build and serialize the token as a compact URL-safe string.
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
-    // Extracts the username (subject) from the given JWT token.
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
-    }
-
-    // Extracts the expiration date from the token.
-    public Date extractExpiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
-    // Generic method to extract a specific claim from the token using a claim's resolver.
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        // Rebuild the key for parsing the token.
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         Key key = Keys.hmacShaKeyFor(keyBytes);
-        // Build a JWT parser with the signing key.
-        final Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        // Use the provided function to extract the desired claim.
         return claimsResolver.apply(claims);
     }
 
-    // Validates the token by checking that the username matches and the token is not expired.
+    public String extractUsername(String token) {
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public Date extractExpiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     public boolean isTokenValid(String token, String username) {
         return username.equals(extractUsername(token)) && !isTokenExpired(token);
     }
 
-    // Returns true if the token is expired.
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
