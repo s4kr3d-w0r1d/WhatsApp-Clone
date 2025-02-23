@@ -4,7 +4,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -15,15 +17,28 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    @Value("${app.jwt.secret}")
-    private String secretKey; // This must be a valid Base64-encoded string
+    @Value("${app.jwt.secret:}")
+    private String secretKey; // May be empty if not set in properties
 
-    // Hard-coded expiration time (24 hours in milliseconds)
+    // Hard-coded expiration time: 24 hours in milliseconds
     private static final long EXPIRATION_TIME = 86400000L;
 
-    public String generateToken(String subject) {
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        // If no secretKey is provided or it's too short, generate a secure one.
+        if (secretKey == null || secretKey.trim().isEmpty() || Decoders.BASE64.decode(secretKey).length < 32) {
+            Key generatedKey = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+            secretKey = Encoders.BASE64.encode(generatedKey.getEncoded());
+            // For production, you should log a warning and persist the key instead of generating it every time.
+            System.out.println("Generated fallback JWT secret: " + secretKey);
+        }
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        Key key = Keys.hmacShaKeyFor(keyBytes);
+        key = Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    public String generateToken(String subject) {
         return Jwts.builder()
                 .setSubject(subject)
                 .setIssuedAt(new Date())
@@ -33,8 +48,6 @@ public class JwtUtil {
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
-        Key key = Keys.hmacShaKeyFor(keyBytes);
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
