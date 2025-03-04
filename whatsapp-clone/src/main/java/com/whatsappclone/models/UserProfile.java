@@ -15,12 +15,12 @@ public class UserProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;  // References User entity
 
     @Column
-    private String profilePic;  // Stores URL or Base64 string
+    private String profilePictureUrl;  // Stores URL or Base64 string
 
     @Column
     private String bio;

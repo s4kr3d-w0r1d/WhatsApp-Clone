@@ -1,5 +1,6 @@
 package com.whatsappclone.repositories;
 
+import com.whatsappclone.models.User;
 import com.whatsappclone.models.UserProfile;
 import lombok.AllArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,5 +11,5 @@ import java.util.Optional;
 @Repository
 
 public interface UserProfileRepository extends JpaRepository<UserProfile, Long> {
-    Optional<UserProfile> findByUserId(Long userId);
+    Optional<UserProfile> findByUser(User user);
 }
