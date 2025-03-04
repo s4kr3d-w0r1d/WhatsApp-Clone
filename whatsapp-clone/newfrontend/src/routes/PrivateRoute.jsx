@@ -1,13 +1,12 @@
-import { Navigate } from "react-router-dom";
+import { Outlet, Navigate } from 'react-router-dom'
 
+const PrivateRoute = () => {
+    let token = sessionStorage.getItem('token');
+    let auth =  {'token' : token}
 
-const PrivateRoute = ({ children }) => {
-    const currentUser= false;
-
-    if(!currentUser){        //if false
-         return <Navigate to="/" replace={true}/>
-    }
-  return children;
+    return (
+        auth.token ? <Outlet/> : <Navigate to = '/'/>
+    )
 }
 
 export default PrivateRoute
