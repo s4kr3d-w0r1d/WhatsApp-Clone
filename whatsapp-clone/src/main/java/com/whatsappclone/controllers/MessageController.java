@@ -4,6 +4,8 @@ import com.whatsappclone.models.Message;
 import com.whatsappclone.services.MessageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.util.List;
 
 @RestController
@@ -22,6 +24,18 @@ public class MessageController {
             @RequestParam Long recipientId,
             @RequestParam String content) {
         Message message = messageService.sendMessage(senderId, recipientId, content);
+        return ResponseEntity.ok(message);
+    }
+
+    // New endpoint to send a media message
+    @PostMapping("/media")
+    public ResponseEntity<Message> sendMediaMessage(
+            @RequestParam Long senderId,
+            @RequestParam Long recipientId,
+            @RequestParam(required = false) String content,
+            @RequestParam MultipartFile mediaFile,
+            @RequestParam String mediaType) {
+        Message message = messageService.sendMediaMessage(senderId, recipientId, content, mediaFile, mediaType);
         return ResponseEntity.ok(message);
     }
 
