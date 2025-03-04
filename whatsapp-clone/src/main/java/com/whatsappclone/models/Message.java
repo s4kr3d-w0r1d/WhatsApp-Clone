@@ -24,10 +24,14 @@ public class Message {
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
 
-    @Column(nullable = false, length = 500)
+    @Column(length = 500)
     private String content;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false)
     private Date timestamp;
+
+    private String mediaUrl;    // Path or URL to the uploaded media file
+    private String mediaType;   // e.g., "image", "video", "audio", "file", "link"
+
 }
