@@ -1,7 +1,9 @@
 package com.whatsappclone.services;
 
+import com.whatsappclone.models.GroupChat;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.models.User;
+import com.whatsappclone.repositories.GroupChatRepository;
 import com.whatsappclone.repositories.MessageRepository;
 import com.whatsappclone.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,15 +18,20 @@ import java.util.Optional;
 
 @Service
 public class MessageService {
+
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final GroupChatRepository groupChatRepository; // Injected repository for groups
+
     // Define the upload directory for chat media. (Set in application.properties)
     @Value("${uploads.chat:C:/uploads/chat}")
     private String chatUploadPath;
 
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository) {
+    // Updated constructor to include GroupChatRepository
+    public MessageService(MessageRepository messageRepository, UserRepository userRepository, GroupChatRepository groupChatRepository) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.groupChatRepository = groupChatRepository;
     }
 
     // Send a message from sender to recipient with given content.
@@ -42,6 +49,7 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
+    // Send a message with media (text is optional) from sender to recipient.
     public Message sendMediaMessage(Long senderId, Long recipientId, String content, MultipartFile mediaFile, String mediaType) {
         Optional<User> senderOpt = userRepository.findById(senderId);
         Optional<User> recipientOpt = userRepository.findById(recipientId);
@@ -51,7 +59,7 @@ public class MessageService {
         Message message = new Message();
         message.setSender(senderOpt.get());
         message.setRecipient(recipientOpt.get());
-        message.setContent(content);  // Text is optional; can be empty
+        message.setContent(content);
         message.setTimestamp(new Date());
 
         if (mediaFile != null && !mediaFile.isEmpty()) {
@@ -66,7 +74,6 @@ public class MessageService {
             File dest = new File(uploadDir, fileName);
             try {
                 mediaFile.transferTo(dest);
-                // Store a URL or path; adjust this based on how you serve static files.
                 message.setMediaUrl("/uploads/chat/" + fileName);
                 message.setMediaType(mediaType);
             } catch (IOException e) {
@@ -76,6 +83,44 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
+    // Send a group message from sender to a group.
+    public Message sendGroupMessage(Long senderId, Long groupId, String content, MultipartFile mediaFile, String mediaType) {
+        // Retrieve the sender (User)
+        Optional<User> senderOpt = userRepository.findById(senderId);
+        if (senderOpt.isEmpty()) {
+            throw new RuntimeException("Sender not found");
+        }
+        // Retrieve the group (GroupChat) using the injected instance, not the interface itself.
+        Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            throw new RuntimeException("Group not found");
+        }
+        Message message = new Message();
+        message.setSender(senderOpt.get());
+        // For group messages, recipient is null; instead, we set the groupChat field.
+        message.setGroupChat(groupOpt.get());
+        message.setContent(content);
+        message.setTimestamp(new Date());
+
+        if (mediaFile != null && !mediaFile.isEmpty()) {
+            String fileName = System.currentTimeMillis() + "_" + mediaFile.getOriginalFilename();
+            File uploadDir = new File(chatUploadPath);
+            if (!uploadDir.exists()) {
+                if (!uploadDir.mkdirs()) {
+                    throw new RuntimeException("Failed to create directory for chat media");
+                }
+            }
+            File dest = new File(uploadDir, fileName);
+            try {
+                mediaFile.transferTo(dest);
+                message.setMediaUrl("/uploads/chat/" + fileName);
+                message.setMediaType(mediaType);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to save media file", e);
+            }
+        }
+        return messageRepository.save(message);
+    }
 
     // Retrieve the full conversation between two users (both directions), ordered by timestamp.
     public List<Message> getChatHistory(Long userId1, Long userId2) {
