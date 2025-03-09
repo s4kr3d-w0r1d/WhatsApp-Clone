@@ -1,29 +1,13 @@
-import Message from "./Message"
+import Message from "./Message";
 
-const ChatBox = () => {
-  
-  const messages =[
-    {
-      id:1,
-      text:"hello",
-      sender: "User1",
-    time: "12:30",
-    },
-    {
-      id:2,
-      text:"hi",
-      sender: "User2",
-    time: "1:30",
-    }
-  ]
-
+const ChatBox = ({ messages }) => {
   return (
-    <div className="pb-44 pt-20 containerWrap">
-     {messages.map(message =>(
-      <Message key={message.id} message={message}/>
-     ))}
+    <div className="pb-44 pt-20 w-full ">
+      {messages.map((message) => (
+        <Message key={message.id} message={message} />
+      ))}
     </div>
-  )
-}
+  );
+};
 
-export default ChatBox
+export default ChatBox;
