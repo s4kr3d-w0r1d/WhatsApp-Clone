@@ -3,6 +3,7 @@ package com.whatsappclone.models;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.Date;
+import jakarta.persistence.ManyToOne;
 
 @Entity
 @Table(name = "messages")
@@ -23,6 +24,11 @@ public class Message {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipient_id", nullable = false)
     private User recipient;
+
+    // For group messages, set the group; this field is optional.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private GroupChat groupChat;
 
     @Column(length = 500)
     private String content;
