@@ -1,11 +1,16 @@
 package com.whatsappclone.dto;
 
 import lombok.Data;
-import java.util.Set;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Data
 public class GroupCreationRequest {
+    // Getters and setters
     private Long ownerId;
     private String name;
     private String description;
+
 }

@@ -17,7 +17,7 @@ public class MessageController {
         this.messageService = messageService;
     }
 
-    // POST endpoint to send a message.
+    // POST endpoint to send a one-to-one text message.
     @PostMapping
     public ResponseEntity<Message> sendMessage(
             @RequestParam Long senderId,
@@ -27,7 +27,7 @@ public class MessageController {
         return ResponseEntity.ok(message);
     }
 
-    // New endpoint to send a media message
+    // POST endpoint to send a one-to-one media message.
     @PostMapping("/media")
     public ResponseEntity<Message> sendMediaMessage(
             @RequestParam Long senderId,
@@ -39,12 +39,31 @@ public class MessageController {
         return ResponseEntity.ok(message);
     }
 
-    // GET endpoint to retrieve chat history between two users.
+    // GET endpoint to retrieve one-to-one chat history.
     @GetMapping
     public ResponseEntity<List<Message>> getChatHistory(
             @RequestParam Long userId1,
             @RequestParam Long userId2) {
         List<Message> messages = messageService.getChatHistory(userId1, userId2);
         return ResponseEntity.ok(messages);
+    }
+
+    // GET endpoint to retrieve group chat history.
+    @GetMapping("/group/{groupId}/history")
+    public ResponseEntity<List<Message>> getGroupChatHistory(@PathVariable Long groupId) {
+        List<Message> messages = messageService.getGroupChatHistory(groupId);
+        System.out.println("Found " + messages.size() + " messages for group " + groupId);
+        return ResponseEntity.ok(messages);
+    }
+    @PostMapping("/group")
+    public ResponseEntity<Message> sendGroupMessage(
+            @RequestParam Long senderId,
+            @RequestParam Long groupId,
+            @RequestParam String content,
+            // Optionally you can accept media parameters if needed.
+            @RequestParam(required = false) String mediaUrl,
+            @RequestParam(required = false) String mediaType) {
+        Message message = messageService.sendGroupMessage(senderId, groupId, content, mediaUrl, mediaType);
+        return ResponseEntity.ok(message);
     }
 }

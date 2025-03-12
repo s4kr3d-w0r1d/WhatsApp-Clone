@@ -22,7 +22,7 @@ public class Message {
 
     // Each message has one recipient.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
+    @JoinColumn(name = "recipient_id", nullable = true)
     private User recipient;
 
     // For group messages, set the group; this field is optional.

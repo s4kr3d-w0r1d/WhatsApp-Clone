@@ -1,5 +1,6 @@
 package com.whatsappclone.services;
 
+import com.whatsappclone.dto.GroupMemberDTO;
 import com.whatsappclone.models.GroupChat;
 import com.whatsappclone.models.GroupMember;
 import com.whatsappclone.models.User;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class GroupService {
@@ -47,42 +49,67 @@ public class GroupService {
         return savedGroup;
     }
 
-    // Add a user to an existing group.
-    public GroupMember addMember(Long groupId, Long userId) {
-        Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (groupOpt.isEmpty() || userOpt.isEmpty()) {
-            throw new RuntimeException("Group or user not found");
-        }
-        // Check if already a member
-        if (groupMemberRepository.findByGroupChatAndUser(groupOpt.get(), userOpt.get()).isPresent()) {
-            throw new RuntimeException("User is already a member of this group");
-        }
-        GroupMember member = new GroupMember();
-        member.setGroupChat(groupOpt.get());
-        member.setUser(userOpt.get());
-        return groupMemberRepository.save(member);
-    }
-
-    // Remove a member from the group.
-    public GroupChat removeMember(Long groupId, Long userId) {
-        Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (groupOpt.isEmpty() || userOpt.isEmpty()) {
-            throw new RuntimeException("Group or user not found");
-        }
-        GroupMember member = groupMemberRepository.findByGroupChatAndUser(groupOpt.get(), userOpt.get())
-                .orElseThrow(() -> new RuntimeException("User is not a member of this group"));
-        groupMemberRepository.delete(member);
-        return groupOpt.get();
-    }
-
-    // Retrieve all members of a group.
-    public List<GroupMember> getGroupMembers(Long groupId) {
+    // Add a user to an existing group (only the owner can add).
+    public GroupChat addMember(Long groupId, Long ownerId, Long userId) {
         Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
         if (groupOpt.isEmpty()) {
             throw new RuntimeException("Group not found");
         }
-        return groupMemberRepository.findByGroupChat(groupOpt.get());
+        GroupChat group = groupOpt.get();
+        // Ensure the ownerId matches the group's owner.
+        if (!group.getOwner().getId().equals(ownerId)) {
+            throw new RuntimeException("Only the group owner can add members");
+        }
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        // Check if the user is already a member.
+        Optional<GroupMember> existingMember = groupMemberRepository.findByGroupChatAndUser(group, userOpt.get());
+        if (existingMember.isPresent()) {
+            throw new RuntimeException("User is already a member of this group");
+        }
+        GroupMember member = new GroupMember();
+        member.setGroupChat(group);
+        member.setUser(userOpt.get());
+        groupMemberRepository.save(member);
+        return group;
+    }
+
+    // Remove a user from the group (only the owner can remove).
+    public GroupChat removeMember(Long groupId, Long ownerId, Long userId) {
+        Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            throw new RuntimeException("Group not found");
+        }
+        GroupChat group = groupOpt.get();
+        if (!group.getOwner().getId().equals(ownerId)) {
+            throw new RuntimeException("Only the group owner can remove members");
+        }
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        GroupMember member = groupMemberRepository.findByGroupChatAndUser(group, userOpt.get())
+                .orElseThrow(() -> new RuntimeException("User is not a member of this group"));
+        groupMemberRepository.delete(member);
+        return group;
+    }
+
+    // Retrieve all members of a group as DTOs.
+    public List<GroupMemberDTO> getGroupMembers(Long groupId) {
+        Optional<GroupChat> groupOpt = groupChatRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            throw new RuntimeException("Group not found");
+        }
+        List<GroupMember> members = groupMemberRepository.findByGroupChat(groupOpt.get());
+        return members.stream()
+                .map(member -> new GroupMemberDTO(
+                        member.getId(),
+                        member.getGroupChat().getId(),
+                        member.getGroupChat().getName(),
+                        member.getUser().getId(),
+                        member.getUser().getName()))
+                .collect(Collectors.toList());
     }
 }

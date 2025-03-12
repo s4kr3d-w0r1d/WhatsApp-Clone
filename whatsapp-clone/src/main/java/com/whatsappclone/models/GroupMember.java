@@ -1,25 +1,27 @@
 package com.whatsappclone.models;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 @Entity
 @Table(name = "group_members")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class GroupMember {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // The group this membership belongs to.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    @JsonBackReference  // This side is not serialized (prevents infinite recursion)
     private GroupChat groupChat;
 
-    // The user who is a member of the group.
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
+
 }
