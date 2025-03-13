@@ -66,4 +66,19 @@ public class MessageController {
         Message message = messageService.sendGroupMessage(senderId, groupId, content, mediaUrl, mediaType);
         return ResponseEntity.ok(message);
     }
+
+
+    // Endpoint to mark a message as delivered.
+    @PostMapping("/{messageId}/delivered")
+    public ResponseEntity<Message> markMessageAsDelivered(@PathVariable Long messageId) {
+        Message updatedMessage = messageService.markMessageAsDelivered(messageId);
+        return ResponseEntity.ok(updatedMessage);
+    }
+
+    // Endpoint to mark a message as read.
+    @PostMapping("/{messageId}/read")
+    public ResponseEntity<Message> markMessageAsRead(@PathVariable Long messageId) {
+        Message updatedMessage = messageService.markMessageAsRead(messageId);
+        return ResponseEntity.ok(updatedMessage);
+    }
 }

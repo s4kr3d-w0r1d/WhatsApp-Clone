@@ -40,4 +40,15 @@ public class Message {
     private String mediaUrl;    // Path or URL to the uploaded media file
     private String mediaType;   // e.g., "image", "video", "audio", "file", "link"
 
+    // New fields for delivery and read status
+    @Setter
+    @Getter
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deliveredAt;
+
+    @Setter
+    @Getter
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date readAt;
+
 }

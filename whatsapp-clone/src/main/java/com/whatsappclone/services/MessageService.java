@@ -3,8 +3,10 @@ package com.whatsappclone.services;
 import com.whatsappclone.models.GroupChat;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.models.User;
+import com.whatsappclone.models.UserBlock;
 import com.whatsappclone.repositories.GroupChatRepository;
 import com.whatsappclone.repositories.MessageRepository;
+import com.whatsappclone.repositories.UserBlockRepository;
 import com.whatsappclone.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -23,15 +24,17 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final GroupChatRepository groupChatRepository;
+    private final UserBlockRepository blockRepository;
 
     // Directory where media files will be saved (configure in application.properties)
     @Value("${uploads.chat:C:/uploads/chat}")
     private String chatUploadPath;
 
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository, GroupChatRepository groupChatRepository) {
+    public MessageService(MessageRepository messageRepository, UserRepository userRepository, GroupChatRepository groupChatRepository, UserBlockService userBlockService, UserBlockRepository blockRepository) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.groupChatRepository = groupChatRepository;
+        this.blockRepository = blockRepository;
     }
 
     // Sends a one-to-one text message.
@@ -41,6 +44,13 @@ public class MessageService {
         if (senderOpt.isEmpty() || recipientOpt.isEmpty()) {
             throw new RuntimeException("Sender or recipient not found");
         }
+        User sender = senderOpt.get();
+        User recipient = recipientOpt.get();
+        Optional<UserBlock> block = blockRepository.findByBlockerAndBlocked(sender, recipient);
+        if (block.isPresent()) {
+            throw new RuntimeException("You are blocked by the recipient and cannot send messages.");
+        }
+
         Message message = new Message();
         message.setSender(senderOpt.get());
         message.setRecipient(recipientOpt.get());
@@ -55,6 +65,12 @@ public class MessageService {
         Optional<User> recipientOpt = userRepository.findById(recipientId);
         if (senderOpt.isEmpty() || recipientOpt.isEmpty()) {
             throw new RuntimeException("Sender or recipient not found");
+        }
+        User sender = senderOpt.get();
+        User recipient = recipientOpt.get();
+        Optional<UserBlock> block = blockRepository.findByBlockerAndBlocked(sender, recipient);
+        if (block.isPresent()) {
+            throw new RuntimeException("You are blocked by the recipient and cannot send messages.");
         }
         Message message = new Message();
         message.setSender(senderOpt.get());
@@ -151,6 +167,28 @@ public class MessageService {
             message.setMediaUrl(mediaUrl);
             message.setMediaType(mediaType);
         }
+        return messageRepository.save(message);
+    }
+
+    // Mark a message as delivered.
+    public Message markMessageAsDelivered(Long messageId) {
+        Optional<Message> messageOpt = messageRepository.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            throw new RuntimeException("Message not found");
+        }
+        Message message = messageOpt.get();
+        message.setDeliveredAt(new Date());
+        return messageRepository.save(message);
+    }
+
+    // Mark a message as read.
+    public Message markMessageAsRead(Long messageId) {
+        Optional<Message> messageOpt = messageRepository.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            throw new RuntimeException("Message not found");
+        }
+        Message message = messageOpt.get();
+        message.setReadAt(new Date());
         return messageRepository.save(message);
     }
 
