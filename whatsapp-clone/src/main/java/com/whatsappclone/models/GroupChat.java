@@ -14,13 +14,16 @@ import java.util.Set;
 @Entity
 @Table(name = "groups")
 public class GroupChat {
-    // Getters and setters
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    private GroupType groupType;
 
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
@@ -33,5 +36,18 @@ public class GroupChat {
     @OneToMany(mappedBy = "groupChat")
     @JsonManagedReference  // This side will be serialized
     private List<GroupMember> members;
+
+    // Convenience method to add member
+    public void addMember(GroupMember member) {
+        members.add(member);
+        member.setGroupChat(this);
+    }
+
+    // Convenience method to remove member
+    public void removeMember(GroupMember member) {
+        members.remove(member);
+        member.setGroupChat(null);
+    }
+
 
 }

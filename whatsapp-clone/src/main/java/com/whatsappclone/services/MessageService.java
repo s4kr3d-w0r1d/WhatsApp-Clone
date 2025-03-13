@@ -4,10 +4,7 @@ import com.whatsappclone.models.GroupChat;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.models.User;
 import com.whatsappclone.models.UserBlock;
-import com.whatsappclone.repositories.GroupChatRepository;
-import com.whatsappclone.repositories.MessageRepository;
-import com.whatsappclone.repositories.UserBlockRepository;
-import com.whatsappclone.repositories.UserRepository;
+import com.whatsappclone.repositories.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,16 +22,18 @@ public class MessageService {
     private final UserRepository userRepository;
     private final GroupChatRepository groupChatRepository;
     private final UserBlockRepository blockRepository;
+    private final GroupMemberRepository groupMemberRepository;
 
     // Directory where media files will be saved (configure in application.properties)
     @Value("${uploads.chat:C:/uploads/chat}")
     private String chatUploadPath;
 
-    public MessageService(MessageRepository messageRepository, UserRepository userRepository, GroupChatRepository groupChatRepository, UserBlockService userBlockService, UserBlockRepository blockRepository) {
+    public MessageService(MessageRepository messageRepository, UserRepository userRepository, GroupChatRepository groupChatRepository, UserBlockService userBlockService, UserBlockRepository blockRepository, GroupMemberRepository groupMemberRepository) {
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
         this.groupChatRepository = groupChatRepository;
         this.blockRepository = blockRepository;
+        this.groupMemberRepository = groupMemberRepository;
     }
 
     // Sends a one-to-one text message.
@@ -151,11 +150,16 @@ public class MessageService {
         if (groupOpt.isEmpty()) {
             throw new RuntimeException("Group not found");
         }
+        User sender = senderOpt.get();
+        GroupChat group = groupOpt.get();
+        if (!groupMemberRepository.existsByGroupChatAndUser(group, sender)) {
+            throw new RuntimeException("User is not a member of the group");
+        }
+
         Message message = new Message();
         message.setSender(senderOpt.get());
 
         // Retrieve the group and force initialization of lazy properties to avoid JSON serialization issues.
-        GroupChat group = groupOpt.get();
         group.getOwner().getEmail(); // Access a property to force lazy-loading
 
         message.setGroupChat(group);

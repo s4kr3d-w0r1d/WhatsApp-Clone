@@ -1,5 +1,6 @@
 package com.whatsappclone.dto;
 
+import com.whatsappclone.models.GroupType;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,5 +13,6 @@ public class GroupCreationRequest {
     private Long ownerId;
     private String name;
     private String description;
+    private GroupType groupType;
 
 }

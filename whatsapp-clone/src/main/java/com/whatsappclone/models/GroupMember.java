@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Setter
 @Getter
 @Entity
@@ -24,4 +26,9 @@ public class GroupMember {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Enumerated(EnumType.STRING)
+    private GroupMemberRole role;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date joinedAt;
 }
