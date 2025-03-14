@@ -22,7 +22,7 @@ public class Message {
 
     // Each message has one recipient.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
+    @JoinColumn(name = "recipient_id", nullable = true)
     private User recipient;
 
     // For group messages, set the group; this field is optional.
@@ -39,5 +39,16 @@ public class Message {
 
     private String mediaUrl;    // Path or URL to the uploaded media file
     private String mediaType;   // e.g., "image", "video", "audio", "file", "link"
+
+    // New fields for delivery and read status
+    @Setter
+    @Getter
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date deliveredAt;
+
+    @Setter
+    @Getter
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date readAt;
 
 }

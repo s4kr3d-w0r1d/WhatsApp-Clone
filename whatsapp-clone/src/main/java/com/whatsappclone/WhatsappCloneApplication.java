@@ -9,3 +9,4 @@ public class WhatsappCloneApplication {
 		SpringApplication.run(WhatsappCloneApplication.class, args);
 	}
 }
+

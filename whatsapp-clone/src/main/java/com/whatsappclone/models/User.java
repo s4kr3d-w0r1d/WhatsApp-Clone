@@ -24,6 +24,8 @@ public class User {
     @Column(nullable = false)
     private String name;
 
+    private boolean online = false;
+
     public User(Long id, String email, String password, String name) {
         this.id = id;
         this.email = email;
