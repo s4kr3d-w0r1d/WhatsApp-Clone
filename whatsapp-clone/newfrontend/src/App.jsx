@@ -1,34 +1,36 @@
-import "./App.css";
-import Login from "./Login";
-import Register from "./Register";
-import ChatRoom from "./ChatRoom";
-import Home from "./Home";
-
+import Login from "./components/auth/Login";
+import Register from "./components/auth/Register";
+import ChatRoom from "./components/chat/ChatRoom";
+import Home from "./pages/Home";
 import { Routes, Route } from "react-router-dom";
-import bgImage from "./assets/bg3.jpg";
 import PrivateRoute from "./routes/PrivateRoute";
+import ChatListSidebar from "./components/chat/ChatListSidebar";
+import { useState } from "react";
 
 function App() {
+  const [selectedChat, setSelectedChat] = useState(null);
   return (
-    <div
-      className="text-white  w-screen h-screen flex  bg-cover"
-      style={{
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="flex h-screen">
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        <Route element={<PrivateRoute />}>
-          <Route path="/chat" element={<ChatRoom />}></Route>
-        </Route>
+        <Route
+          path="/chat"
+          element={<ChatListSidebar onSelectChat={setSelectedChat} />}
+        />
       </Routes>
+      <div className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route element={<PrivateRoute />}>
+            <Route
+              path="/chat"
+              element={<ChatRoom selectedChat={selectedChat} />}
+            />
+          </Route>
+        </Routes>
+      </div>
     </div>
   );
 }
-
 export default App;
