@@ -16,6 +16,14 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
             User sender1, User recipient1, User sender2, User recipient2);
     List<Message> findByGroupChatOrderByTimestampAsc(GroupChat groupChat);
     List<Message> findByGroupChatId(Long groupId);
+    @Query("""
+        SELECT m
+        FROM Message m
+        WHERE LOWER(m.sender.name) LIKE LOWER(CONCAT('%', :username, '%'))
+           OR LOWER(m.recipient.name) LIKE LOWER(CONCAT('%', :username, '%'))
+        ORDER BY m.timestamp DESC
+    """)
+    List<Message> findMessagesBySenderOrRecipientName(@Param("username") String username);
 
 
 }

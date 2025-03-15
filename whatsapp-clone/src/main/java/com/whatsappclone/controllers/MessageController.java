@@ -1,5 +1,6 @@
 package com.whatsappclone.controllers;
 
+import com.whatsappclone.dto.ChatSearchResponse;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.services.MessageService;
 import org.springframework.http.ResponseEntity;
@@ -80,5 +81,18 @@ public class MessageController {
     public ResponseEntity<Message> markMessageAsRead(@PathVariable Long messageId) {
         Message updatedMessage = messageService.markMessageAsRead(messageId);
         return ResponseEntity.ok(updatedMessage);
+    }
+    @GetMapping("/search")
+    public ResponseEntity<List<Message>> searchMessagesByUsername(@RequestParam String username) {
+        List<Message> results = messageService.searchMessagesByUsername(username);
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/search-chats")
+    public ResponseEntity<ChatSearchResponse> searchChatsByUsername(
+            @RequestParam Long searcherId,
+            @RequestParam String username) {
+        ChatSearchResponse response = messageService.searchChatsAndProfile(searcherId, username);
+        return ResponseEntity.ok(response);
     }
 }

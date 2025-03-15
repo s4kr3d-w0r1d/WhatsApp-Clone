@@ -1,5 +1,6 @@
 package com.whatsappclone.services;
 
+import com.whatsappclone.dto.ChatSearchResponse;
 import com.whatsappclone.models.GroupChat;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.models.User;
@@ -195,5 +196,33 @@ public class MessageService {
         message.setReadAt(new Date());
         return messageRepository.save(message);
     }
+
+    public List<Message> searchMessagesByUsername(String username) {
+        // Simple pass-through to the repository query:
+        return messageRepository.findMessagesBySenderOrRecipientName(username);
+    }
+
+    public ChatSearchResponse searchChatsAndProfile(Long searcherId, String searchedName) {
+        // Use the partial match method to get a list of users
+        List<User> searchedUsers = userRepository.findByNameContainingIgnoreCase(searchedName);
+        if (searchedUsers.isEmpty()) {
+            throw new RuntimeException("No user found with name containing: " + searchedName);
+        }
+
+        // For example, you might decide to pick the first result:
+        User searchedUser = searchedUsers.get(0);
+
+        // Retrieve the searcher’s profile
+        User searcher = userRepository.findById(searcherId)
+                .orElseThrow(() -> new RuntimeException("Searcher not found"));
+
+        // Retrieve chat messages between searcher and the found user
+        List<Message> messages = messageRepository
+                .findBySenderAndRecipientOrSenderAndRecipientOrderByTimestampAsc(
+                        searcher, searchedUser, searchedUser, searcher);
+
+        return new ChatSearchResponse(searchedUser, messages);
+    }
+
 
 }
