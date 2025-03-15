@@ -51,4 +51,7 @@ public class Message {
     @Temporal(TemporalType.TIMESTAMP)
     private Date readAt;
 
+    @Lob
+    private byte[] encryptedContent;  // The actual ciphertext
+
 }
