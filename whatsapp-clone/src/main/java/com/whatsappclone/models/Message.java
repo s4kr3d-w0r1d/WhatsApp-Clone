@@ -53,5 +53,8 @@ public class Message {
 
     @Lob
     private byte[] encryptedContent;  // The actual ciphertext
-
+    @Column(name = "deleted_by_sender")
+    private boolean deletedBySender = false;
+    @Column(name = "deleted_by_recipient")
+    private boolean deletedByRecipient = false;
 }

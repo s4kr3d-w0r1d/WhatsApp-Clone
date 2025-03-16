@@ -174,6 +174,45 @@ public class MessageService {
         return messageRepository.save(message);
     }
 
+    public void deleteMessageForUser(Long messageId, Long userId) {
+        Optional<Message> messageOptional = messageRepository.findById(messageId);
+        if (!messageOptional.isPresent()) {
+            throw new RuntimeException("Message not found");
+        }
+        Message message = messageOptional.get();
+
+        // Check if the user is the sender or the recipient
+        if (message.getSender().getId().equals(userId)) {
+            message.setDeletedBySender(true);
+        } else if (message.getRecipient().getId().equals(userId)) {
+            message.setDeletedByRecipient(true);
+        } else {
+            throw new RuntimeException("User not authorized to delete this message");
+        }
+
+        // If both parties have deleted the message, remove it from the database
+        if (message.isDeletedBySender() && message.isDeletedByRecipient()) {
+            messageRepository.delete(message);
+        } else {
+            messageRepository.save(message);
+        }
+    }
+
+    public void deleteMessageForEveryone(Long messageId, Long userId) {
+        Optional<Message> messageOptional = messageRepository.findById(messageId);
+        if (!messageOptional.isPresent()) {
+            throw new RuntimeException("Message not found");
+        }
+        Message message = messageOptional.get();
+
+        // Verify that the requester is the sender
+        if (!message.getSender().getId().equals(userId)) {
+            throw new RuntimeException("Only the sender can delete the message for everyone");
+        }
+
+        messageRepository.delete(message);
+    }
+
     // Mark a message as delivered.
     public Message markMessageAsDelivered(Long messageId) {
         Message message = messageRepository.findById(messageId)
