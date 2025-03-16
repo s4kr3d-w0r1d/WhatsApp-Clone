@@ -44,7 +44,7 @@
 ### Prerequisites
 - Java 11 or higher
 - PostgreSQL Database
-- Maven or Gradle
+- Maven
 - Node.js (for frontend using Vite)
 
 ### Steps
