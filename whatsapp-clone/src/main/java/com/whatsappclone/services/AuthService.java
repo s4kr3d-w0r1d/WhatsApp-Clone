@@ -69,6 +69,18 @@ public class AuthService {
         if (user.isEmpty() || !bCryptPasswordEncoder.matches(password, user.get().getPassword())) {
             throw new RuntimeException("Invalid email or password!");
         }
+        User user1 = user.get();
+        user1.setOnline(true);
+        userRepository.save(user1);
         return jwtUtil.generateToken(email);
+    }
+    public void logoutUser(String email) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if (user.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+        User user1 = user.get();
+        user1.setOnline(false);
+        userRepository.save(user1);
     }
 }

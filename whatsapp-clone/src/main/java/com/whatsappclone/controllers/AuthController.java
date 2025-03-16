@@ -1,12 +1,11 @@
 package com.whatsappclone.controllers;
 
 import com.whatsappclone.dto.LoginRequest;
+import com.whatsappclone.dto.LogoutRequest;
 import com.whatsappclone.dto.RegisterRequest;
 import com.whatsappclone.services.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -28,4 +27,10 @@ public class  AuthController {
         String token = authService.loginUser(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(token);
     }
+
+    @PostMapping("/logout")
+    public void logout(@RequestBody LogoutRequest request) {
+        authService.logoutUser(request.getEmail());
+    }
+
 }
