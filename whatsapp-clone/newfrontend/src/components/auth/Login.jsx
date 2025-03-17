@@ -24,7 +24,7 @@ const Login = () => {
 
       if (response.status === 200) {
         console.log("login successful");
-        // console.log(token);
+         //console.log(response.data);
         sessionStorage.setItem("token", response.data.token);
         sessionStorage.setItem("loggedInUserId", response.data.user.id);
 
