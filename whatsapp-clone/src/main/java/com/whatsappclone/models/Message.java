@@ -52,6 +52,7 @@ public class Message {
     private Date readAt;
 
     @Lob
+    @Basic(fetch = FetchType.LAZY)
     private byte[] encryptedContent;  // The actual ciphertext
     @Column(name = "deleted_by_sender")
     private boolean deletedBySender = false;
