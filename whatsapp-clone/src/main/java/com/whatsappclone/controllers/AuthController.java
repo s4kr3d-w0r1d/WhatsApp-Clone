@@ -7,6 +7,8 @@ import com.whatsappclone.services.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/auth")
 public class  AuthController {
@@ -21,11 +23,10 @@ public class  AuthController {
         String token = authService.registerUser(request.getUsername(), request.getEmail(), request.getPassword());
         return ResponseEntity.ok(token);
     }
-
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest request) {
-        String token = authService.loginUser(request.getEmail(), request.getPassword());
-        return ResponseEntity.ok(token);
+    public ResponseEntity<Map<String,Object>> login(@RequestBody LoginRequest request) {
+        Map<String,Object> response = authService.loginUser(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")

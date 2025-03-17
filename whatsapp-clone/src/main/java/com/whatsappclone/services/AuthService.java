@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -64,7 +66,7 @@ public class AuthService {
     }
 
 
-    public String loginUser(String email, String password) {
+    public Map<String, Object> loginUser(String email, String password) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isEmpty() || !bCryptPasswordEncoder.matches(password, user.get().getPassword())) {
             throw new RuntimeException("Invalid email or password!");
@@ -72,7 +74,13 @@ public class AuthService {
         User user1 = user.get();
         user1.setOnline(true);
         userRepository.save(user1);
-        return jwtUtil.generateToken(email);
+        String token = jwtUtil.generateToken(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", user.get());
+
+        return response;
     }
     public void logoutUser(String email) {
         Optional<User> user = userRepository.findByEmail(email);
