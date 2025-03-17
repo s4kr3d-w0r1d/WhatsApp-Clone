@@ -2,6 +2,7 @@ import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
 import ChatRoom from "./components/chat/ChatRoom";
 import Home from "./pages/Home";
+import MyProfile from "./pages/MyProfile";
 import { Routes, Route } from "react-router-dom";
 import PrivateRoute from "./routes/PrivateRoute";
 import ChatListSidebar from "./components/chat/ChatListSidebar";
@@ -22,6 +23,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<MyProfile />} />
           <Route element={<PrivateRoute />}>
             <Route
               path="/chat"

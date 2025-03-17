@@ -1,10 +1,13 @@
 package com.whatsappclone.controllers;
 
+import com.whatsappclone.models.User;
 import com.whatsappclone.models.UserProfile;
 import com.whatsappclone.services.UserProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/profile")
@@ -32,5 +35,11 @@ public class UserProfileController {
             @RequestParam(required = false) MultipartFile profilePicture) {
         UserProfile updatedProfile = profileService.updateProfile(userId, status, bio, profilePicture);
         return ResponseEntity.ok(updatedProfile);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<User>> searchUsers(@RequestParam String name) {
+        List<User> users = profileService.searchUsersByName(name);
+        return ResponseEntity.ok(users);
     }
 }

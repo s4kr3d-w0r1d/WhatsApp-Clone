@@ -24,8 +24,9 @@ const Login = () => {
 
       if (response.status === 200) {
         console.log("login successful");
-        const token = response.data;
-        sessionStorage.setItem("token", token);
+        // console.log(token);
+        sessionStorage.setItem("token", response.data.token);
+        sessionStorage.setItem("loggedInUserId", response.data.user.id);
 
         // Navigate to chat page after login
         navigate("/chat");

@@ -7,6 +7,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -30,11 +32,18 @@ public class AuthService {
         return jwtUtil.generateToken(username);
     }
 
-    public String loginUser(String email, String password) {
+    public Map<String, Object> loginUser(String email, String password) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isEmpty() || !bCryptPasswordEncoder.matches(password, user.get().getPassword())) {
             throw new RuntimeException("Invalid email or password!");
         }
-        return jwtUtil.generateToken(email);
+
+        String token = jwtUtil.generateToken(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", user.get());
+
+        return response;
     }
 }
