@@ -91,5 +91,4 @@ public class GroupChatController {
         GroupChat updatedGroup = groupService.leaveGroup(groupId, userId);
         return ResponseEntity.ok(updatedGroup);
     }
-
 }

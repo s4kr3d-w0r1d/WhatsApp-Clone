@@ -19,7 +19,6 @@ public class ReactionController {
     }
 
     // POST endpoint to add or update a reaction.
-    // Example: POST /api/reactions?messageId=5&userId=2&type=like
     @PostMapping
     public ResponseEntity<Reaction> addOrUpdateReaction(@RequestParam Long messageId,
                                                         @RequestParam Long userId,
@@ -36,8 +35,6 @@ public class ReactionController {
         return ResponseEntity.ok(reactions);
     }
 
-    // DELETE endpoint to remove a reaction.
-    // Example: DELETE /api/reactions?messageId=5&userId=2
     @DeleteMapping
     public ResponseEntity<Void> removeReaction(@RequestParam Long messageId,
                                                @RequestParam Long userId) {

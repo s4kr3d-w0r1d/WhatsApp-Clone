@@ -2,6 +2,7 @@ package com.whatsappclone.controllers;
 
 import com.whatsappclone.models.User;
 import com.whatsappclone.models.UserProfile;
+import com.whatsappclone.repositories.UserProfileRepository;
 import com.whatsappclone.services.UserProfileService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +15,11 @@ import java.util.List;
 public class UserProfileController {
 
     private final UserProfileService profileService;
+    private final UserProfileRepository userProfileRepository;
 
-    public UserProfileController(UserProfileService profileService) {
+    public UserProfileController(UserProfileService profileService, UserProfileRepository userProfileRepository) {
         this.profileService = profileService;
+        this.userProfileRepository = userProfileRepository;
     }
 
     // GET endpoint to retrieve a user's profile by userId.
@@ -38,8 +41,3 @@ public class UserProfileController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<User>> searchUsers(@RequestParam String name) {
-        List<User> users = profileService.searchUsersByName(name);
-        return ResponseEntity.ok(users);
-    }
-}

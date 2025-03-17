@@ -51,4 +51,11 @@ public class Message {
     @Temporal(TemporalType.TIMESTAMP)
     private Date readAt;
 
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    private byte[] encryptedContent;  // The actual ciphertext
+    @Column(name = "deleted_by_sender")
+    private boolean deletedBySender = false;
+    @Column(name = "deleted_by_recipient")
+    private boolean deletedByRecipient = false;
 }
