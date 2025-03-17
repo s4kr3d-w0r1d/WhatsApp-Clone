@@ -1,5 +1,8 @@
 const Message = ({ message }) => {
-  const isMyMessage = message.sender === "You";
+  const loggedInUserId = sessionStorage.getItem("loggedInUserId");
+
+  const isMyMessage = message.sender.id == loggedInUserId;
+
   return (
     <div>
       <div
@@ -14,10 +17,10 @@ const Message = ({ message }) => {
           </div>
         </div>
         <div className="chat-header">
-          {message.sender}
+          {message?.sender?.name}
           <time className="text-xs opacity-50">{message.time}</time>
         </div>
-        <div className="chat-bubble">{message.text}</div>
+        <div className="chat-bubble">{message?.content}</div>
         <div className="chat-footer opacity-50">Delivered</div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 package com.whatsappclone.controllers;
 
+import com.whatsappclone.models.User;
 import com.whatsappclone.models.UserProfile;
 import com.whatsappclone.repositories.UserProfileRepository;
 import com.whatsappclone.services.UserProfileService;
@@ -40,9 +41,3 @@ public class UserProfileController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<UserProfile>> searchUserProfiles(@RequestParam String username) {
-        List<UserProfile> profiles = userProfileRepository.findByUser_NameContainingIgnoreCase(username);
-        return ResponseEntity.ok(profiles);
-    }
-
-}

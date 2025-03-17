@@ -8,16 +8,21 @@ const ChatBox = ({ messages }) => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight;
     }
+
+    console.log(messages);
   }, [messages]);
 
   return (
     <div
       ref={chatRef}
-      className="flex flex-col-reverse h-[calc(100vh-200px)] overflow-y-auto mt-0 w-full"
+      className="flex flex-col-reverse h-[calc(100vh-200px)] overflow-y-auto mt-8 w-full"
     >
-      {messages.slice().reverse().map((message) => ( 
-        <Message key={message.id} message={message} />
-      ))}
+      {messages
+        .slice()
+        .reverse()
+        .map((message) => (
+          <Message key={message.id} message={message} />
+        ))}
     </div>
   );
 };

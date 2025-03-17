@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -64,31 +61,3 @@ public class AuthService {
 
         return jwtUtil.generateToken(username);
     }
-
-
-    public Map<String, Object> loginUser(String email, String password) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isEmpty() || !bCryptPasswordEncoder.matches(password, user.get().getPassword())) {
-            throw new RuntimeException("Invalid email or password!");
-        }
-        User user1 = user.get();
-        user1.setOnline(true);
-        userRepository.save(user1);
-        String token = jwtUtil.generateToken(email);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("token", token);
-        response.put("user", user.get());
-
-        return response;
-    }
-    public void logoutUser(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if (user.isEmpty()) {
-            throw new RuntimeException("User not found");
-        }
-        User user1 = user.get();
-        user1.setOnline(false);
-        userRepository.save(user1);
-    }
-}
