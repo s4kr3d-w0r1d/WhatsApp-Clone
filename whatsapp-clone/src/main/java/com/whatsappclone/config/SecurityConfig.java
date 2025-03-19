@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Permit GET requests for the root ("/") and error page.
-                        .requestMatchers("/", "/error", "/auth/**","/ws/**","/messages/**","/api/user-profile/**", "/uploads/**","/profile/**","/api/groups/**","/api/messages/**","/api/reactions/**").permitAll()
+                        .requestMatchers("/", "/error", "/auth/**","/ws/**","/messages/**","/api/user-profile/**", "/uploads/**","/profile/**","/api/groups/**","/api/messages/**","/api/reactions/**","/api/encrypted-messages/**","api/register/**","/register/**","/api/blocks/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

@@ -72,7 +72,6 @@ public class UserProfileService {
         }
         return profileRepository.save(profile);
     }
-
     public List<User> searchUsersByName(String name) {
         return userRepository.findByNameContainingIgnoreCase(name);
     }

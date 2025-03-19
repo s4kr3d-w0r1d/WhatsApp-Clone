@@ -15,6 +15,7 @@ public class UserProfileController {
 
     private final UserProfileService profileService;
 
+
     public UserProfileController(UserProfileService profileService) {
         this.profileService = profileService;
     }
@@ -23,6 +24,10 @@ public class UserProfileController {
     @GetMapping("/{userId}")
     public ResponseEntity<UserProfile> getProfile(@PathVariable Long userId) {
         UserProfile profile = profileService.getProfileByUserId(userId);
+        if (profile.getProfilePictureUrl() != null) {
+            String imageUrl = "http://localhost:8080" + profile.getProfilePictureUrl();
+            profile.setProfilePictureUrl(imageUrl);
+        }
         return ResponseEntity.ok(profile);
     }
 
@@ -36,10 +41,11 @@ public class UserProfileController {
         UserProfile updatedProfile = profileService.updateProfile(userId, status, bio, profilePicture);
         return ResponseEntity.ok(updatedProfile);
     }
-
+    // Search users by name
     @GetMapping("/search")
     public ResponseEntity<List<User>> searchUsers(@RequestParam String name) {
         List<User> users = profileService.searchUsersByName(name);
         return ResponseEntity.ok(users);
     }
 }
+

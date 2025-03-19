@@ -1,5 +1,6 @@
 package com.whatsappclone.controllers;
 
+import com.whatsappclone.dto.ChatSearchResponse;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.services.MessageService;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,7 @@ public class MessageController {
         System.out.println("Found " + messages.size() + " messages for group " + groupId);
         return ResponseEntity.ok(messages);
     }
+
     @PostMapping("/group")
     public ResponseEntity<Message> sendGroupMessage(
             @RequestParam Long senderId,
@@ -80,5 +82,29 @@ public class MessageController {
     public ResponseEntity<Message> markMessageAsRead(@PathVariable Long messageId) {
         Message updatedMessage = messageService.markMessageAsRead(messageId);
         return ResponseEntity.ok(updatedMessage);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<Message>> searchMessagesByUsername(@RequestParam String username) {
+        List<Message> results = messageService.searchMessagesByUsername(username);
+        return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/search-chats")
+    public ResponseEntity<ChatSearchResponse> searchChatsByUsername(
+            @RequestParam Long searcherId,
+            @RequestParam String username) {
+        ChatSearchResponse response = messageService.searchChatsAndProfile(searcherId, username);
+        return ResponseEntity.ok(response);
+    }
+    @DeleteMapping("/delete/{messageId}")
+    public ResponseEntity<String> deleteMessageForUser(@PathVariable Long messageId,@RequestParam Long userId) {
+        messageService.deleteMessageForUser(messageId, userId);
+        return ResponseEntity.ok("Message deleted successfully");
+    }
+    @DeleteMapping("/{messageId}/everyone")
+    public ResponseEntity<String> deleteEveryoneMessage(@PathVariable Long messageId, @RequestParam Long userId) {
+        messageService.deleteMessageForEveryone(messageId, userId);
+        return ResponseEntity.ok("Message deleted successfully");
     }
 }

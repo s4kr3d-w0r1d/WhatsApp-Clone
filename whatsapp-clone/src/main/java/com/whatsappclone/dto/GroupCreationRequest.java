@@ -14,5 +14,5 @@ public class GroupCreationRequest {
     private String name;
     private String description;
     private GroupType groupType;
-
+    private String profilePictureUrl;
 }

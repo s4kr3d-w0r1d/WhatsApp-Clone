@@ -3,6 +3,7 @@ package com.whatsappclone.controllers;
 import com.whatsappclone.dto.LoginRequest;
 import com.whatsappclone.dto.RegisterRequest;
 import com.whatsappclone.services.AuthService;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,5 +28,15 @@ public class  AuthController {
     public ResponseEntity<Map<String,Object>> login(@RequestBody LoginRequest request) {
         Map<String,Object> response = authService.loginUser(request.getEmail(), request.getPassword());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Invalid token format");
+        }
+        String token = authHeader.substring(7);
+        String message = authService.logoutUser(token);
+        return ResponseEntity.ok(message);
     }
 }

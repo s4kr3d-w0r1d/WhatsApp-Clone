@@ -1,14 +1,11 @@
 package com.whatsappclone.controllers;
 
-import com.whatsappclone.dto.GroupCreationRequest;
-import com.whatsappclone.models.GroupChat;
-import com.whatsappclone.models.GroupJoinRequest;
-import com.whatsappclone.models.GroupMember;
-import com.whatsappclone.models.GroupMemberRole;
+import com.whatsappclone.models.*;
 import com.whatsappclone.services.GroupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -22,16 +19,46 @@ public class GroupChatController {
         this.groupService = groupService;
     }
 
-    // Create a new group.
-    @PostMapping
-    public ResponseEntity<GroupChat> createGroup(@RequestBody GroupCreationRequest request) {
-        GroupChat group = groupService.createGroup(
-                request.getOwnerId(),
-                request.getName(),
-                request.getDescription(),
-                request.getGroupType());
-        return new ResponseEntity<>(group, HttpStatus.CREATED);
+    @GetMapping("/search")
+    public List<GroupChat> searchPublicGroups(@RequestParam String name) {
+        return groupService.searchPublicGroups(name);
     }
+
+    // Create a new group.
+    @PostMapping("/create")
+    public ResponseEntity<GroupChat> createGroup(
+            @RequestParam Long ownerId,
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam String groupType,
+            @RequestParam(value = "groupPicture", required = false) MultipartFile groupPicture) {
+
+        System.out.println("🟢 Request received: ownerId=" + ownerId + ", name=" + name + ", groupType=" + groupType);
+
+        // Check if file is actually received
+        if (groupPicture == null || groupPicture.isEmpty()) {
+            System.err.println("❌ Error: groupPicture is NULL or Empty - No file uploaded.");
+        } else {
+            System.out.println("✅ Received file: " + groupPicture.getOriginalFilename() + " (" + groupPicture.getSize() + " bytes)");
+        }
+
+        // Convert groupType to enum
+        GroupType parsedGroupType;
+        try {
+            parsedGroupType = GroupType.valueOf(groupType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Invalid GroupType: " + groupType);
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Call service layer
+        GroupChat createdGroup = groupService.createGroup(ownerId, name, description, parsedGroupType, groupPicture);
+        System.out.println("✅ Group created successfully: " + createdGroup.getId());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdGroup);
+    }
+
+
 
     // For public groups: user sends a join request.
     @PostMapping("/{groupId}/join-request")
@@ -91,5 +118,4 @@ public class GroupChatController {
         GroupChat updatedGroup = groupService.leaveGroup(groupId, userId);
         return ResponseEntity.ok(updatedGroup);
     }
-
 }

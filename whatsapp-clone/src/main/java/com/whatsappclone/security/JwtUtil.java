@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 
 @Component
@@ -22,7 +24,7 @@ public class JwtUtil {
 
     // Hard-coded expiration time: 24 hours in milliseconds
     private static final long EXPIRATION_TIME = 86400000L;
-
+    private final Set<String> tokenBlacklist = new HashSet<>();
     private Key key;
 
     @PostConstruct
@@ -70,5 +72,13 @@ public class JwtUtil {
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    public void blacklistToken(String token) {
+        tokenBlacklist.add(token);
+    }
+
+    public boolean isTokenBlacklisted(String token) {
+        return tokenBlacklist.contains(token);
     }
 }
