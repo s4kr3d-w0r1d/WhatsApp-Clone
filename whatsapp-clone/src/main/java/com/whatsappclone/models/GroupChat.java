@@ -7,7 +7,6 @@ import lombok.Setter;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @Setter
 @Getter
@@ -36,6 +35,9 @@ public class GroupChat {
     @OneToMany(mappedBy = "groupChat")
     @JsonManagedReference  // This side will be serialized
     private List<GroupMember> members;
+
+    @Column
+    private String profilePictureUrl;  // Stores URL or Base64 string
 
     // Convenience method to add member
     public void addMember(GroupMember member) {

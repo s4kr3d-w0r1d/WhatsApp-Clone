@@ -5,9 +5,13 @@ import com.whatsappclone.repositories.GroupChatRepository;
 import com.whatsappclone.repositories.GroupJoinRequestRepository;
 import com.whatsappclone.repositories.GroupMemberRepository;
 import com.whatsappclone.repositories.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +23,8 @@ public class GroupService {
     private final GroupMemberRepository groupMemberRepository;
     private final GroupJoinRequestRepository joinRequestRepository;
     private final UserRepository userRepository;
-
+    @Value("${uploads.path:C:/uploads}")  // Read upload path from properties file
+    private String uploadPath;
     public GroupService(GroupChatRepository groupChatRepository,
                         GroupMemberRepository groupMemberRepository,
                         GroupJoinRequestRepository joinRequestRepository,
@@ -30,20 +35,61 @@ public class GroupService {
         this.userRepository = userRepository;
     }
 
+    public List<GroupChat> searchPublicGroups(String name) {
+        return groupChatRepository.findByNameContainingIgnoreCaseAndGroupType(name, GroupType.PUBLIC);
+    }
     // Create a new group. The creator becomes owner and admin.
-    @Transactional
-    public GroupChat createGroup(Long ownerId, String name, String description, GroupType groupType) {
+    public GroupChat createGroup(Long ownerId, String name, String description, GroupType groupType, MultipartFile groupDp) {
         User owner = userRepository.findById(ownerId)
                 .orElseThrow(() -> new RuntimeException("Owner not found"));
+
         GroupChat group = new GroupChat();
         group.setName(name);
         group.setDescription(description);
         group.setOwner(owner);
         group.setGroupType(groupType);
         group.setCreatedAt(new Date());
+
+        // Debugging: Check if file is received
+        if (groupDp == null) {
+            System.err.println("Error: groupDp is NULL - No file was uploaded.");
+        } else if (groupDp.isEmpty()) {
+            System.err.println("Error: groupDp is EMPTY - File not received.");
+        } else {
+            System.out.println("Received File: " + groupDp.getOriginalFilename());
+        }
+
+        // Handle group DP upload if provided
+        if (groupDp != null && !groupDp.isEmpty()) {
+            String groupUploadPath = "C:/uploads/";  // Ensure this matches your setup
+            String fileName = System.currentTimeMillis() + "_" + groupDp.getOriginalFilename();
+            File uploadDir = new File(groupUploadPath);
+
+            // Create directory if it doesn't exist
+            if (!uploadDir.exists()) {
+                boolean dirCreated = uploadDir.mkdirs();
+                System.out.println("Creating directory: " + groupUploadPath + " → Success: " + dirCreated);
+            }
+
+            File dest = new File(uploadDir, fileName);
+            try {
+                groupDp.transferTo(dest);
+                System.out.println("File uploaded successfully: " + dest.getAbsolutePath());
+
+                group.setProfilePictureUrl("/uploads/" + fileName); // Store relative file path
+            } catch (IOException e) {
+                System.err.println("Failed to save group DP: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("Failed to save group DP", e);
+            }
+        } else {
+            System.out.println("⚠️ No image uploaded. Using default DP.");
+            group.setProfilePictureUrl("/uploads/groups/default-group-dp.png"); // Default group DP
+        }
+
         GroupChat savedGroup = groupChatRepository.save(group);
 
-        // Add owner as a member with role ADMIN.
+        // Add owner as a member with ADMIN role
         GroupMember member = new GroupMember();
         member.setGroupChat(savedGroup);
         member.setUser(owner);
@@ -53,6 +99,8 @@ public class GroupService {
 
         return savedGroup;
     }
+
+
 
     // For public groups: a user can request to join.
     public GroupJoinRequest requestToJoinGroup(Long userId, Long groupId) {
@@ -76,30 +124,42 @@ public class GroupService {
         return joinRequestRepository.save(request);
     }
 
-    // Admin approves a join request.
     @Transactional
     public GroupMember approveJoinRequest(Long groupId, Long adminId, Long requestId) {
-        // Verify that the admin is indeed an admin in the group.
         GroupChat group = groupChatRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
         GroupMember adminMembership = groupMemberRepository.findByGroupChatAndUser(group, admin)
                 .orElseThrow(() -> new RuntimeException("Admin is not a member of the group"));
+
         if (adminMembership.getRole() != GroupMemberRole.ADMIN) {
             throw new RuntimeException("Only admins can approve join requests.");
         }
-        // Retrieve the join request.
+
         GroupJoinRequest joinRequest = joinRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Join request not found"));
-        if (joinRequest.getStatus() != RequestStatus.PENDING) {
-            throw new RuntimeException("Join request is already processed.");
+
+        // **Fix: Handle already processed requests properly**
+        if (joinRequest.getStatus() == RequestStatus.APPROVED) {
+            // Check if user is already a member
+            if (groupMemberRepository.findByGroupChatAndUser(group, joinRequest.getUser()).isPresent()) {
+                throw new RuntimeException("User is already a member of the group.");
+            }
+        } else if (joinRequest.getStatus() == RequestStatus.REJECTED) {
+            throw new RuntimeException("Join request was rejected earlier.");
         }
-        // Approve the request.
+
+        // Approve the request
         joinRequest.setStatus(RequestStatus.APPROVED);
         joinRequestRepository.save(joinRequest);
 
-        // Add user as a group member.
+        // Add user as a member (if not already added)
+        Optional<GroupMember> existingMember = groupMemberRepository.findByGroupChatAndUser(group, joinRequest.getUser());
+        if (existingMember.isPresent()) {
+            return existingMember.get(); // Return existing member instead of re-adding.
+        }
+
         GroupMember member = new GroupMember();
         member.setGroupChat(group);
         member.setUser(joinRequest.getUser());
@@ -107,6 +167,7 @@ public class GroupService {
         member.setJoinedAt(new Date());
         return groupMemberRepository.save(member);
     }
+
 
     // For private groups: admin can add a member directly.
     public GroupMember addMemberToPrivateGroup(Long groupId, Long adminId, Long userId) {
@@ -207,11 +268,8 @@ public class GroupService {
         if (membershipOpt.isEmpty()) {
             throw new RuntimeException("User is not a member of this group");
         }
-
         // Delete the membership record so the user is no longer part of the group.
         groupMemberRepository.delete(membershipOpt.get());
-
         return group;
     }
-
 }
