@@ -41,8 +41,17 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Permit GET requests for the root ("/") and error page.
-                        .requestMatchers("/", "/error", "/auth/**","/ws/**","/messages/**","/api/user-profile/**", "/uploads/**","/profile/**","/api/groups/**","/api/messages/**","/api/reactions/**","/api/encrypted-messages/**","api/register/**","/register/**","/api/blocks/**").permitAll()
+                        .requestMatchers("/", "/error", "/auth/**","/ws/**","/messages/**","/api/user-profile/**", "/uploads/**","/profile/**","/api/groups/**","/api/messages/**","/api/reactions/**","/api/encrypted-messages/**","api/register/**","/register/**","/api/blocks/**","/ws/**", "/app/**", "/user/**").permitAll()
                         .anyRequest().authenticated()
+                )
+                .headers(headers -> headers
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(
+                                "default-src 'self'; " +
+                                        "connect-src 'self' ws://localhost:8080 ws://127.0.0.1:8080; " + // ✅ Allow WebSockets
+                                        "script-src 'self' 'unsafe-inline'; " +
+                                        "style-src 'self' 'unsafe-inline'; " +
+                                        "img-src 'self' data:;"
+                        ))
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

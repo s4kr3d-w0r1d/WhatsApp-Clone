@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.io.*;
-import java.net.URL;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -78,7 +78,7 @@ public class MessageService {
 
     // Sends a one-to-one media message.
     public Message sendMediaMessage(Long senderId, Long recipientId, String content,
-                                    MultipartFile mediaFile, String mediaType) {
+                                    String mediaUrl, String mediaType) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
         User recipient = userRepository.findById(recipientId)
@@ -96,20 +96,10 @@ public class MessageService {
         message.setContent(content);
         message.setTimestamp(new Date());
 
-        if (mediaFile != null && !mediaFile.isEmpty()) {
-            String fileName = System.currentTimeMillis() + "_" + mediaFile.getOriginalFilename();
-            File uploadDir = new File(chatUploadPath);
-            if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-                throw new RuntimeException("Failed to create directory for chat media");
-            }
-            File dest = new File(uploadDir, fileName);
-            try {
-                mediaFile.transferTo(dest);
-                message.setMediaUrl("/uploads/chat/" + fileName);
-                message.setMediaType(mediaType);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to save media file", e);
-            }
+        // Set the media URL if provided
+        if (mediaUrl != null && !mediaUrl.trim().isEmpty()) {
+            message.setMediaUrl(mediaUrl);
+            message.setMediaType(mediaType);
         }
         return messageRepository.save(message);
     }
@@ -327,161 +317,5 @@ public class MessageService {
         // Decrypt the encrypted content
         byte[] plaintextBytes = E2EECryptoUtil.decryptAES(msg.getEncryptedContent(), aesKey);
         return new String(plaintextBytes, StandardCharsets.UTF_8);
-    }
-
-    // Media message using media URL (one-to-one, plain)
-    public Message sendMediaMessageUrlWs(Long senderId, Long recipientId, String content,
-                                         String mediaUrl, String mediaType) {
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-        User recipient = userRepository.findById(recipientId)
-                .orElseThrow(() -> new RuntimeException("Recipient not found"));
-        Optional<UserBlock> block = blockRepository.findByBlockerAndBlocked(sender, recipient);
-        if (block.isPresent()) {
-            throw new RuntimeException("You are blocked by the recipient and cannot send messages.");
-        }
-        Message message = new Message();
-        message.setSender(sender);
-        message.setRecipient(recipient);
-        message.setContent(content);
-        message.setTimestamp(new Date());
-        // For plain media messages, simply store the provided URL.
-        message.setMediaUrl(mediaUrl);
-        message.setMediaType(mediaType);
-        return messageRepository.save(message);
-    }
-
-    // Media message using media URL with encryption (one-to-one)
-    public Message sendEncryptedMediaMessageUrlWs(Long senderId, Long recipientId, String content,
-                                                  String mediaUrl, String mediaType) throws Exception {
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-        User recipient = userRepository.findById(recipientId)
-                .orElseThrow(() -> new RuntimeException("Recipient not found"));
-        Optional<UserBlock> block = blockRepository.findByBlockerAndBlocked(sender, recipient);
-        if (block.isPresent()) {
-            throw new RuntimeException("You are blocked by the recipient and cannot send messages.");
-        }
-        Message message = new Message();
-        message.setSender(sender);
-        message.setRecipient(recipient);
-        message.setContent(content);
-        message.setTimestamp(new Date());
-
-        // Download the media from the provided URL.
-        URL url = new URL(mediaUrl);
-        byte[] mediaBytes;
-        try (InputStream is = url.openStream()) {
-            mediaBytes = is.readAllBytes();
-        }
-
-        // Encrypt using DH-based key derivation.
-        UserKeys senderKeys = userKeysRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender keys not found"));
-        UserKeys recipientKeys = userKeysRepository.findById(recipientId)
-                .orElseThrow(() -> new RuntimeException("Recipient keys not found"));
-        KeyFactory keyFactory = KeyFactory.getInstance("DH");
-        PrivateKey senderPrivateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(senderKeys.getPrivateKeyBytes()));
-        PublicKey recipientPublicKey = keyFactory.generatePublic(new X509EncodedKeySpec(recipientKeys.getPublicKeyBytes()));
-        byte[] sharedSecret = E2EECryptoUtil.computeSharedSecret(senderPrivateKey, recipientPublicKey);
-        SecretKeySpec aesKey = E2EECryptoUtil.deriveAESKey(sharedSecret);
-        byte[] encryptedMediaBytes = E2EECryptoUtil.encryptAES(mediaBytes, aesKey);
-
-        // Save the encrypted media file.
-        String fileName = System.currentTimeMillis() + "_encrypted_" + new File(new URL(mediaUrl).getPath()).getName();
-        File uploadDir = new File(chatUploadPath);
-        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-            throw new RuntimeException("Failed to create directory for chat media");
-        }
-        File dest = new File(uploadDir, fileName);
-        try (OutputStream os = new FileOutputStream(dest)) {
-            os.write(encryptedMediaBytes);
-        }
-        message.setMediaUrl("/uploads/chat/" + fileName);
-        message.setMediaType(mediaType);
-        return messageRepository.save(message);
-    }
-
-    // Encrypted group text message.
-    public Message sendEncryptedGroupMessage(Long senderId, Long groupId, String content) throws Exception {
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-        GroupChat group = groupChatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
-        if (!groupMemberRepository.existsByGroupChatAndUser(group, sender)) {
-            throw new RuntimeException("User is not a member of the group");
-        }
-        // For demonstration, use a simple derived key.
-        SecretKeySpec groupKey = new SecretKeySpec(("groupKey" + groupId).getBytes(StandardCharsets.UTF_8), "AES");
-        byte[] encryptedContent = E2EECryptoUtil.encryptAES(content.getBytes(StandardCharsets.UTF_8), groupKey);
-
-        Message message = new Message();
-        message.setSender(sender);
-        group.getOwner().getEmail();
-        message.setGroupChat(group);
-        message.setContent("");
-        message.setEncryptedContent(encryptedContent);
-        message.setTimestamp(new Date());
-        return messageRepository.save(message);
-    }
-
-    // Group media message (plain).
-    public Message sendGroupMediaMessageUrlWs(Long senderId, Long groupId, String content,
-                                              String mediaUrl, String mediaType) {
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-        GroupChat group = groupChatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
-        if (!groupMemberRepository.existsByGroupChatAndUser(group, sender)) {
-            throw new RuntimeException("User is not a member of the group");
-        }
-        Message message = new Message();
-        message.setSender(sender);
-        group.getOwner().getEmail();
-        message.setGroupChat(group);
-        message.setContent(content);
-        message.setTimestamp(new Date());
-        message.setMediaUrl(mediaUrl);
-        message.setMediaType(mediaType);
-        return messageRepository.save(message);
-    }
-
-    // Encrypted group media message.
-    public Message sendEncryptedGroupMediaMessageUrlWs(Long senderId, Long groupId, String content,
-                                                       String mediaUrl, String mediaType) throws Exception {
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Sender not found"));
-        GroupChat group = groupChatRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
-        if (!groupMemberRepository.existsByGroupChatAndUser(group, sender)) {
-            throw new RuntimeException("User is not a member of the group");
-        }
-        Message message = new Message();
-        message.setSender(sender);
-        group.getOwner().getEmail();
-        message.setGroupChat(group);
-        message.setContent(content);
-        message.setTimestamp(new Date());
-
-        // Download and encrypt media.
-        URL url = new URL(mediaUrl);
-        byte[] mediaBytes;
-        try (InputStream is = url.openStream()) {
-            mediaBytes = is.readAllBytes();
-        }
-        SecretKeySpec groupKey = new SecretKeySpec(("groupKey" + groupId).getBytes(StandardCharsets.UTF_8), "AES");
-        byte[] encryptedMediaBytes = E2EECryptoUtil.encryptAES(mediaBytes, groupKey);
-        String fileName = System.currentTimeMillis() + "_encrypted_" + new File(new URL(mediaUrl).getPath()).getName();
-        File uploadDir = new File(chatUploadPath);
-        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-            throw new RuntimeException("Failed to create directory for chat media");
-        }
-        File dest = new File(uploadDir, fileName);
-        try (OutputStream os = new FileOutputStream(dest)) {
-            os.write(encryptedMediaBytes);
-        }
-        message.setMediaUrl("/uploads/chat/" + fileName);
-        message.setMediaType(mediaType);
-        return messageRepository.save(message);
     }
 }

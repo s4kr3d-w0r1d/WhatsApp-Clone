@@ -8,13 +8,14 @@ import org.springframework.web.socket.server.support.HttpSessionHandshakeInterce
 import java.util.Map;
 
 public class CustomHandshakeInterceptor extends HttpSessionHandshakeInterceptor {
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-        // Extract "user" from query parameters (for testing purposes)
-        String user = request.getURI().getQuery(); // For simplicity; you may want to parse the query string properly.
-        if (user != null && user.startsWith("user=")) {
-            attributes.put("user", user.substring(5)); // Extract the value after "user="
+        String query = request.getURI().getQuery(); // Full query string (e.g., "user=John")
+        if (query != null && query.contains("user=")) {
+            String username = query.split("user=")[1].split("&")[0]; // Extract username safely
+            attributes.put("user", username);
         }
         return super.beforeHandshake(request, response, wsHandler, attributes);
     }

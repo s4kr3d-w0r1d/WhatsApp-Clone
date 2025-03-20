@@ -1,12 +1,9 @@
 package com.whatsappclone.controllers;
 
-import com.whatsappclone.dto.ChatActionWs;
-import com.whatsappclone.dto.ChatMessageWs;
+import com.whatsappclone.dto.*;
 import com.whatsappclone.models.Message;
 import com.whatsappclone.services.MessageService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -16,134 +13,77 @@ public class WsChatController {
     private final MessageService messageService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    @Autowired
     public WsChatController(MessageService messageService, SimpMessagingTemplate messagingTemplate) {
         this.messageService = messageService;
         this.messagingTemplate = messagingTemplate;
     }
 
-    // One-to-one private chat.
-    @MessageMapping("/chat/private")
-    public void handlePrivateChat(@Payload ChatMessageWs chatMessage) throws Exception {
-        Message savedMessage;
-        if (chatMessage.getMediaUrl() != null && !chatMessage.getMediaUrl().isEmpty()) {
-            if (chatMessage.isEncrypted()) {
-                savedMessage = messageService.sendEncryptedMediaMessageUrlWs(
-                        chatMessage.getSenderId(),
-                        chatMessage.getRecipientId(),
-                        chatMessage.getContent(),
-                        chatMessage.getMediaUrl(),
-                        chatMessage.getMediaType()
-                );
-            } else {
-                savedMessage = messageService.sendMediaMessageUrlWs(
-                        chatMessage.getSenderId(),
-                        chatMessage.getRecipientId(),
-                        chatMessage.getContent(),
-                        chatMessage.getMediaUrl(),
-                        chatMessage.getMediaType()
-                );
-            }
-        } else {
-            if (chatMessage.isEncrypted()) {
-                savedMessage = messageService.sendEncryptedMessage(
-                        chatMessage.getSenderId(),
-                        chatMessage.getRecipientId(),
-                        chatMessage.getContent()
-                );
-            } else {
-                savedMessage = messageService.sendMessage(
-                        chatMessage.getSenderId(),
-                        chatMessage.getRecipientId(),
-                        chatMessage.getContent()
-                );
-            }
-        }
-        // Deliver the message to the recipient's WebSocket queue.
-        messagingTemplate.convertAndSendToUser(
-                String.valueOf(chatMessage.getRecipientId()),
-                "/queue/messages",
-                savedMessage
+    // Send a one-to-one text message in real-time
+    @MessageMapping("/send-message")
+    public void sendMessage(SendMessageRequest request) {
+        Message message = messageService.sendMessage(request.getSenderId(), request.getRecipientId(), request.getContent());
+        // Broadcast to the recipient's topic (for example: /topic/messages/{recipientId})
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), message);
+    }
+
+    // Send a media message in real-time
+    @MessageMapping("/send-media-message")
+    public void sendMediaMessage(SendMediaMessageRequest request) {
+        Message message = messageService.sendMediaMessage(
+                request.getSenderId(),
+                request.getRecipientId(),
+                request.getContent(),
+                request.getMediaUrl(),  // Media URL instead of file
+                request.getMediaType()
         );
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), message);
     }
 
-    // Group chat.
-    @MessageMapping("/chat/group")
-    public void handleGroupChat(@Payload ChatMessageWs chatMessage) throws Exception {
-        Message savedMessage;
-        if (chatMessage.getMediaUrl() != null && !chatMessage.getMediaUrl().isEmpty()) {
-            if (chatMessage.isEncrypted()) {
-                savedMessage = messageService.sendEncryptedGroupMediaMessageUrlWs(
-                        chatMessage.getSenderId(),
-                        chatMessage.getGroupId(),
-                        chatMessage.getContent(),
-                        chatMessage.getMediaUrl(),
-                        chatMessage.getMediaType()
-                );
-            } else {
-                savedMessage = messageService.sendGroupMediaMessageUrlWs(
-                        chatMessage.getSenderId(),
-                        chatMessage.getGroupId(),
-                        chatMessage.getContent(),
-                        chatMessage.getMediaUrl(),
-                        chatMessage.getMediaType()
-                );
-            }
-        } else {
-            if (chatMessage.isEncrypted()) {
-                savedMessage = messageService.sendEncryptedGroupMessage(
-                        chatMessage.getSenderId(),
-                        chatMessage.getGroupId(),
-                        chatMessage.getContent()
-                );
-            } else {
-                savedMessage = messageService.sendGroupMessage(
-                        chatMessage.getSenderId(),
-                        chatMessage.getGroupId(),
-                        chatMessage.getContent(),
-                        null,
-                        null
-                );
-            }
-        }
-        // Broadcast the group message.
-        messagingTemplate.convertAndSend("/topic/group/" + chatMessage.getGroupId(), savedMessage);
+    // Send a group message
+    @MessageMapping("/send-group-message")
+    public void sendGroupMessage(GroupMessageRequest request) {
+        Message message = messageService.sendGroupMessage(
+                request.getSenderId(),
+                request.getGroupId(),
+                request.getContent(),
+                request.getMediaUrl(),
+                request.getMediaType()
+        );
+        messagingTemplate.convertAndSend("/topic/group/" + request.getGroupId(), message);
     }
 
-    // Handle message actions: delete, delivered, and read.
-    @MessageMapping("/chat/action")
-    public void handleMessageAction(@Payload ChatActionWs action) {
-        Message updatedMessage = null;
-        switch (action.getAction()) {
-            case "deleteForMe":
-                messageService.deleteMessageForUser(action.getMessageId(), action.getUserId());
-                break;
-            case "deleteForEveryone":
-                messageService.deleteMessageForEveryone(action.getMessageId(), action.getUserId());
-                break;
-            case "delivered":
-                updatedMessage = messageService.markMessageAsDelivered(action.getMessageId());
-                break;
-            case "read":
-                updatedMessage = messageService.markMessageAsRead(action.getMessageId());
-                break;
-            default:
-                throw new RuntimeException("Unsupported action: " + action.getAction());
-        }
-        // Optionally, notify both sender and recipient about status changes.
-        if (updatedMessage != null) {
-            if (updatedMessage.getRecipient() != null) {
-                messagingTemplate.convertAndSendToUser(
-                        String.valueOf(updatedMessage.getRecipient().getId()),
-                        "/queue/status",
-                        updatedMessage
-                );
-            }
-            messagingTemplate.convertAndSendToUser(
-                    String.valueOf(updatedMessage.getSender().getId()),
-                    "/queue/status",
-                    updatedMessage
-            );
-        }
+    // Mark a message as delivered
+    @MessageMapping("/mark-delivered")
+    public void markMessageAsDelivered(MarkDeliveredRequest request) {
+        Message message = messageService.markMessageAsDelivered(request.getMessageId());
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), message);
+    }
+
+    // Mark a message as read
+    @MessageMapping("/mark-read")
+    public void markMessageAsRead(MarkReadRequest request) {
+        Message message = messageService.markMessageAsRead(request.getMessageId());
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getSenderId(), message);
+    }
+
+    // Delete a message for a single user
+    @MessageMapping("/delete-message-user")
+    public void deleteMessageForUser(DeleteMessageRequest request) {
+        messageService.deleteMessageForUser(request.getMessageId(), request.getUserId());
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getUserId(), "Message deleted");
+    }
+
+    // Delete a message for everyone
+    @MessageMapping("/delete-message-everyone")
+    public void deleteMessageForEveryone(DeleteMessageRequest request) {
+        messageService.deleteMessageForEveryone(request.getMessageId(), request.getUserId());
+        messagingTemplate.convertAndSend("/topic/messages", "Message deleted for everyone");
+    }
+
+    // Send an encrypted message in real-time
+    @MessageMapping("/send-encrypted-message")
+    public void sendEncryptedMessage(EncryptedMessageRequest request) throws Exception {
+        Message message = messageService.sendEncryptedMessage(request.getSenderId(), request.getRecipientId(), request.getPlaintext());
+        messagingTemplate.convertAndSend("/topic/messages/" + request.getRecipientId(), message);
     }
 }
