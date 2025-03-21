@@ -14,7 +14,7 @@
 - **User Blocking & Management:**  
   - Manage unwanted messages and chat groups.
 - **User Profile and Staus**
- - Users cana dd profile picture , status and bio.
+  - Users cana dd profile picture , status and bio.
 
 ## Technologies & Libraries Used
 - **Backend:**  
