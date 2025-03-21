@@ -1,0 +1,79 @@
+APIs in backend
+
+✅ -> works correctly in test frontend + backend
+☑ -> partially working APIs
+❌ -> not working APIs / non tested APIs
+
+
+BASE_URL = http://localhost:8080
+
+1. Auth Controller 
+
+POST /auth/register ✅ 
+POST /auth/login ✅ 
+POST /auth/logout ✅
+
+2. File Upload Controller
+
+POST /api/messages/upload-media ✅
+
+3. Group Chat Controller (/api/groups)
+
+GET /search ✅
+POST /create ✅
+POST /{groupId}join-request ✅
+POST /{groupId}/join-request/{requestId}/approve ✅
+POST /{groupId}/users ✅
+DELETE /{groupId}/users/{userId} ✅
+GET /{groupId}/members ✅
+PUT /{groupId}/users/{userId}/role ✅
+DELETE /{groupId}/leave ✅
+
+4. Http Message Controller (/api/messages)
+
+GET /chat-history ☑ -> not working for encrypted messages otherwise working
+GET /group-history/{groupId} ☑
+GET /search ✅
+POST /decrypt-message ☑ -> encryption not working so no use of this
+
+5. Private Chat Controller
+
+MESSAGE /app/private/{recipientId} ❌ (I dont know its use )
+
+6. Reaction Controller (/api/reactions)
+
+POST ❌
+GET /{messageId} ❌
+DELETE ❌
+
+7. Typing indicator Controller
+
+MESSAGE /typing ❌
+SENDTO /topic/typing ❌
+
+8. User Block Controller (/api/blocks)
+
+POST /{blockerId}/{blockedId} ✅
+DELETE /{blockerId}/{blockedId} ✅
+GET /{blockerId} ✅
+
+9. User Profile Controller (/profile)
+
+GET /{userId} ✅
+PUT /{userId} ✅
+GET /search ✅
+
+10. User Status Controller (/api/users)
+
+GET /{userId}/status ✅
+
+11. WS Chat Controller (/ws)
+
+MESSAGE /send-message ✅
+MESSAGE /send-media-message ✅
+MESSAGE /send-group-message ❌
+MESSAGE /mark-delivered ❌
+MESSAGE /mark-read ❌
+MESSAGE /delete-message-user ❌
+MESSAGE /delete-message-everyone ❌
+MESSAGE /send-encrypted-message ❌
