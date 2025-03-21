@@ -1,7 +1,7 @@
 package com.whatsappclone.dto;
 
 import lombok.*;
-import org.springframework.web.multipart.MultipartFile;
+
 @Data
 @Getter
 @Setter
