@@ -7,10 +7,12 @@ import MyProfile from "./pages/MyProfile";
 import PrivateRoute from "./routes/PrivateRoute";
 import ChatListSidebar from "./components/chat/ChatListSidebar";
 import { useState } from "react";
+import AboutUs from "./pages/AboutUs";
 
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const location = useLocation();
+  
 
   return (
     <div className="flex h-screen">
@@ -22,6 +24,7 @@ function App() {
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/about-us" element={<AboutUs />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<MyProfile />} />

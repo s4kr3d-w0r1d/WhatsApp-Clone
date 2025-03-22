@@ -24,9 +24,23 @@ const Login = () => {
 
       if (response.status === 200) {
         console.log("login successful");
-         //console.log(response.data);
-        sessionStorage.setItem("token", response.data.token);
-        sessionStorage.setItem("loggedInUserId", response.data.user.id);
+        //  console.log(response.data);
+        // sessionStorage.setItem("token", response.data.token);
+        // sessionStorage.setItem("loggedInUserId", response.data.user.id);
+        
+    const { token, user } = response.data; // Extract token & user details
+    console.log("Login Response:", response.data);
+
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem("loggedInUserId", user.id);  // ✅ Store userId
+    sessionStorage.setItem("loggedInUserEmail", user.email); // ✅ Store email
+    sessionStorage.setItem("loggedInUserName", user.name); // Optional
+
+    console.log("User ID:", user.id);
+      console.log("User Email:", user.email);
+      console.log("User Name:", user.name);
+      console.log("JWT Token:", token);
+
 
         // Navigate to chat page after login
         navigate("/chat");
