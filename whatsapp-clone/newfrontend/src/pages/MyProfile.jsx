@@ -1,25 +1,22 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiCamera, FiEdit } from "react-icons/fi";
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8080"; // Adjust based on backend
+const BASE_URL = "http://localhost:8080";
 
 const MyProfile = () => {
   const navigate = useNavigate();
 
-  // ✅ Retrieve values from sessionStorage
   const userId = sessionStorage.getItem("loggedInUserId");
   const emailId = sessionStorage.getItem("loggedInUserEmail");
   const token = sessionStorage.getItem("token");
-  const userName = sessionStorage.getItem("loggedInUserName")
+  const userName = sessionStorage.getItem("loggedInUserName");
 
-  // // ✅ Log values for debugging
   // console.log("User ID:", userId);
   // console.log("User Email:", emailId);
   // console.log("JWT Token:", token);
-  
+
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [status, setStatus] = useState("");
@@ -39,10 +36,8 @@ const MyProfile = () => {
         });
         setName(userName || "John Doe");
         setBio(response.data.bio || "No bio yet...");
-        setStatus(response.data.status|| "Available");
-        setProfilePic(
-          response.data.profilePictureUrl || "/default-avatar.png"
-        ); // Updated fallback image
+        setStatus(response.data.status || "Available");
+        setProfilePic(response.data.profilePictureUrl || "/default-avatar.png"); // Updated fallback image
         setEmail(emailId || "Not Available");
       } catch (error) {
         console.error("Failed to fetch profile:", error);
@@ -54,12 +49,12 @@ const MyProfile = () => {
 
   const handleImageChange = async (e) => {
     const userId = sessionStorage.getItem("loggedInUserId");
-    console.log("User ID:", userId); // 🔍 Check if userId is correct
+    console.log("User ID:", userId);
 
     const file = e.target.files[0];
-    console.log("Selected File:", file); // 🔍 Verify if file is selected
+    console.log("Selected File:", file);
     if (file) {
-     // setProfilePic(file); 
+      // setProfilePic(file);
       const formData = new FormData();
       formData.append("profilePicture", file);
 
@@ -74,12 +69,9 @@ const MyProfile = () => {
             },
           }
         );
-        
+
         console.log("Full Response:", response.data);
         setProfilePic(response.data.profilePictureUrl);
-;
-        
-
         setMessage("Profile picture updated!");
       } catch (error) {
         setMessage("Failed to update profile picture.");
@@ -87,131 +79,43 @@ const MyProfile = () => {
     }
   };
 
+  const handleUpdateProfile = async () => {
+    try {
+      const payload = new FormData();
+      payload.append("status", status || "");
+      payload.append("bio", bio || "");
+      if (profilePic instanceof File) {
+        payload.append("profilePicture", profilePic);
+      }
 
-  // const handleUpdateProfile = async () => {
-  //   try {
-  //     await axios.put(
-  //       `${BASE_URL}/profile/${userId}`,
-  //       { name, bio },
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-  //         },
-  //       }
-  //     );
-  //     setMessage("Profile updated successfully!");
-  //   } catch (error) {
-  //     setMessage("Failed to update profile.");
-  //   }
-  // };
+      const response = await axios.put(
+        `${BASE_URL}/profile/${userId}`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          },
+        }
+      );
 
-//   const handleUpdateProfile = async () => {
-//     try {
-//         const formData = new FormData();
-//         formData.append("name", name);
-//         formData.append("bio", bio);
-
-//         if (profilePic instanceof File) {
-//             formData.append("profilePicture", profilePic); // Attach file only if it's new
-//         }
-
-//         const headers = {
-//             Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-//         };
-
-//         // Only set Content-Type for FormData
-//         if (profilePic instanceof File) {
-//             headers["Content-Type"] = "multipart/form-data";
-//         }
-
-//         const response = await axios.put(
-//             `${BASE_URL}/profile/${userId}`,
-//             profilePic instanceof File ? formData : { name, bio }, // Use JSON if no file
-//             { headers }
-//         );
-
-//         setMessage("Profile updated successfully!");
-//         setProfilePic(response.data.profile_picture_url);
-//     } catch (error) {
-//         console.error("Error updating profile:", error);
-//         setMessage("Failed to update profile.");
-//     }
-// };
-// const handleUpdateProfile = async () => {
-//   try {
-//       let payload;
-//       let headers;
-
-//       if (profilePic instanceof File) {
-//           // If profile picture is a file, use FormData
-//           payload = new FormData();
-//           payload.append("name", name);
-//           payload.append("bio", bio);
-//           payload.append("profilePicture", profilePic);
-
-//           headers = {
-//               "Content-Type": "multipart/form-data",
-//               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-//           };
-//       } else {
-//           // If no new profile picture, send JSON
-//           payload = { name, bio };
-//           headers = {
-//               "Content-Type": "application/json",
-//               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-//           };
-//       }
-
-//       const response = await axios.put(
-//           `${BASE_URL}/profile/${userId}`,
-//           payload,
-//           { headers }
-//       );
-
-//       setMessage("Profile updated successfully!");
-//       setProfilePic(response.data.profile_picture_url); // Update if backend returns new URL
-//   } catch (error) {
-//       console.error("Error updating profile:", error);
-//       setMessage("Failed to update profile.");
-//   }
-// };
-
-const handleUpdateProfile = async () => {
-  try {
-    const payload = new FormData();
-    payload.append("status", status || ""); // Ensure status is always sent
-    payload.append("bio", bio || ""); // Ensure bio is always sent
-    if (profilePic instanceof File) {
-      payload.append("profilePicture", profilePic);
+      console.log("Response from backend:", response.data);
+      setMessage("Profile updated successfully!");
+      if (response.data.profilePictureUrl) {
+        setProfilePic(response.data.profilePictureUrl);
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      setMessage("Failed to update profile.");
     }
+  };
 
-    const response = await axios.put(`${BASE_URL}/profile/${userId}`, payload, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-      },
-    });
-
-    console.log("Response from backend:", response.data);
-    setMessage("Profile updated successfully!");
-    if (response.data.profilePictureUrl) {
-      setProfilePic(response.data.profilePictureUrl);
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleUpdateProfile();
     }
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    setMessage("Failed to update profile.");
-  }
-};
-
-
-
-
-const handleKeyDown = (event) => {
-  if (event.key === "Enter") {
-      event.preventDefault(); // Prevents newline in input field
-      handleUpdateProfile(); // Call function to update backend
-  }
-};
+  };
 
   return (
     <div className="h-screen w-full bg-gray-900 text-white flex flex-col items-center p-6">
@@ -223,23 +127,18 @@ const handleKeyDown = (event) => {
       </button>
 
       <div className="relative w-24 h-24">
-      {/* <img
-  src={profilePic.startsWith("/") ? `http://localhost:8080${profilePic}` : profilePic} 
-  alt="Profile"
-  onError={(e) => (e.target.src = "default-profile.png")}
-  className="w-full h-full rounded-full border-2 border-gray-600"
-/> */}
-
-<img
-  src={profilePic ? (profilePic.startsWith("/") ? `http://localhost:8080${profilePic}` : profilePic) : "default-avatar.png"}
-  alt="Profile"
-  onError={(e) => (e.target.src = "default-avatar.png")}
-  className="w-full h-full rounded-full border-2 border-gray-600"
-/>
-
-
-          
-      
+        <img
+          src={
+            profilePic
+              ? profilePic.startsWith("/")
+                ? `http://localhost:8080${profilePic}`
+                : profilePic
+              : "default-avatar.png"
+          }
+          alt="Profile"
+          onError={(e) => (e.target.src = "default-avatar.png")}
+          className="w-full h-full rounded-full border-2 border-gray-600"
+        />
 
         <label className="absolute bottom-0 right-0 bg-gray-800 p-1 rounded-full cursor-pointer">
           <FiCamera />
@@ -272,7 +171,6 @@ const handleKeyDown = (event) => {
           className="ml-2 cursor-pointer text-gray-400 hover:text-white"
           onClick={() => setIsEditingStatus(true)}
         />
-        
       </div>
 
       <div className="flex items-center mt-2">
@@ -284,8 +182,7 @@ const handleKeyDown = (event) => {
               setIsEditingBio(false);
               handleUpdateProfile();
             }}
-          
-    onKeyDown={handleKeyDown} // Triggers update when pressing Enter
+            onKeyDown={handleKeyDown}
             className="bg-transparent text-center text-sm outline-none border-b border-white w-64 resize-none"
             autoFocus
           />
