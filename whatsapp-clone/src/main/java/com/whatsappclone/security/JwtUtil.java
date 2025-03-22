@@ -81,4 +81,11 @@ public class JwtUtil {
     public boolean isTokenBlacklisted(String token) {
         return tokenBlacklist.contains(token);
     }
-}
+
+    public boolean validateToken(String token) {
+        try {
+            return !isTokenExpired(token);
+        } catch (Exception e) {
+            return false;
+        }
+}}
