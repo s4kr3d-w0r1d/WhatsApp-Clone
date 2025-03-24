@@ -47,6 +47,6 @@
 
 ### Team Members
 
-1. Saksham Madan (s4kr3d-w0r1d) -> Complete Backend including chatting logics, user profile and blocking, media sharing, configurations etc.
-2. Vaishnavi (Celestial-glitch) -> Complete Frontend including API integration between Frontend and Backend
-3. Tarun Agrawal (PH4NT0M-droid) -> User Authentication (Backend and Frontend) using JWT.
+1. Saksham Madan (24124040) -> Complete Backend including chatting logics, user profile and blocking, media sharing, configurations.
+2. Vaishnavi (24124048) -> Complete Frontend including API integration between Frontend and Backend.
+3. Tarun Agrawal (24124047) -> User Authentication (Backend and Frontend) using JWT.
