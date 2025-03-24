@@ -15,6 +15,8 @@
   - Manage unwanted messages and chat groups.
 - **User Profile and Staus**
   - Users can add profile picture, status and bio.
+- **Group Chats**
+  - There are 2 types of groups public and private. Multiple users can chat in a group along media sharing. Other group functionalities like join request, removal, roles etc. are also implemented.
 
 ## Technologies & Libraries Used
 - **Backend:**  
@@ -25,9 +27,7 @@
 - **Frontend:**  
   - Vite, React.js  
   - HTML, CSS, JavaScript  
-  - SockJS, STOMP.js  
-- **Encryption:**  
-  - Custom end-to-end encryption using Diffie-Hellman key exchange and AES  
+  - SockJS, STOMP.js   
 - **Build Tools:**  
   - Maven for backend, Vite for frontend
 
@@ -47,6 +47,6 @@
 
 ### Team Members
 
-1. Saksham Madan (s4kr3d-w0r1d) 
-2. Vaishnavi (Celestial-glitch)
-3. Tarun Agrawal (PH4NT0M-droid)
+1. Saksham Madan (s4kr3d-w0r1d) -> Complete Backend including chatting logics, user profile and blocking, media sharing, configurations etc.
+2. Vaishnavi (Celestial-glitch) -> Complete Frontend including API integration between Frontend and Backend
+3. Tarun Agrawal (PH4NT0M-droid) -> User Authentication (Backend and Frontend) using JWT.
