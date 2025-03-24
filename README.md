@@ -2,7 +2,7 @@
 # MA 104 Project 1
 
 ## Project Overview
-**WhatsApp Clone** is a full-stack messaging application that replicates the core functionalities of WhatsApp. It supports real-time one-to-one messaging, media sharing via relative URLs. The project leverages both HTTP and WebSocket (STOMP) protocols to provide a robust, secure, and interactive chat experience.
+**WhatsApp Clone** is a full-stack messaging application that replicates the core functionalities of WhatsApp where each user can create their profile including their profile picture, status and bio. It supports real-time one-to-one and group messaging, media sharing via relative URLs. The project leverages both HTTP and WebSocket (STOMP) protocols to provide a robust, secure, and interactive chat experience.
 
 ## Features
 - **Authentication Using jwt**
