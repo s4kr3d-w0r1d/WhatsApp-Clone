@@ -4,6 +4,7 @@ import Register from "./components/auth/Register";
 import ChatRoom from "./components/chat/ChatRoom";
 import Home from "./pages/Home";
 import MyProfile from "./pages/MyProfile";
+import ProfilePage from "./pages/ProfilePage";
 import PrivateRoute from "./routes/PrivateRoute";
 import ChatListSidebar from "./components/chat/ChatListSidebar";
 import { useState } from "react";
@@ -28,6 +29,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<MyProfile />} />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
 
         
           <Route element={<PrivateRoute />}>

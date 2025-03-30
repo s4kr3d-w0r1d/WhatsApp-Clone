@@ -34,11 +34,26 @@ const MyProfile = () => {
             Authorization: `Bearer ${sessionStorage.getItem("token")}`,
           },
         });
+
+
+        //new 
+        const profilePictureUrl = response.data.profilePictureUrl || "/default-avatar.jpg";
+      setProfilePic(profilePictureUrl);
+      
+      // Store in sessionStorage
+      sessionStorage.setItem("loggedInUserProfilePic", profilePictureUrl);
+      console.log("Stored Profile Picture:", sessionStorage.getItem("loggedInUserProfilePic"));
+
+
         setName(userName || "John Doe");
         setBio(response.data.bio || "No bio yet...");
         setStatus(response.data.status || "Available");
         setProfilePic(response.data.profilePictureUrl || "/default-avatar.png"); // Updated fallback image
         setEmail(emailId || "Not Available");
+
+
+
+
       } catch (error) {
         console.error("Failed to fetch profile:", error);
       }
@@ -53,6 +68,7 @@ const MyProfile = () => {
 
     const file = e.target.files[0];
     console.log("Selected File:", file);
+
     if (file) {
       // setProfilePic(file);
       const formData = new FormData();
@@ -71,7 +87,19 @@ const MyProfile = () => {
         );
 
         console.log("Full Response:", response.data);
-        setProfilePic(response.data.profilePictureUrl);
+
+
+        //setProfilePic(response.data.profilePictureUrl);
+        if (response.data.profilePictureUrl) {
+          // Update sessionStorage after a successful upload
+          sessionStorage.setItem("loggedInUserProfilePic", response.data.profilePictureUrl);
+          setProfilePic(response.data.profilePictureUrl);
+          console.log("Updated Profile Picture in sessionStorage:", sessionStorage.getItem("loggedInUserProfilePic"));
+        }
+
+
+
+
         setMessage("Profile picture updated!");
       } catch (error) {
         setMessage("Failed to update profile picture.");
@@ -150,7 +178,7 @@ const MyProfile = () => {
           />
         </label>
       </div>
-      <p className="text-gray-600 mt-4">{name}</p>
+      <p className="text-4xl font-bold text-gray-100 mt-4">{name}</p>
       <div className="flex items-center mt-4">
         {isEditingStatus ? (
           <input
