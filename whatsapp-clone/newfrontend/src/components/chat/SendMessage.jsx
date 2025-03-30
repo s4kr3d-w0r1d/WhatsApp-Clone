@@ -2,13 +2,27 @@ import { useState } from "react";
 
 const SendMessage = ({ addMessage }) => {
   const [value, setValue] = useState("");
+  const [file, setFile] = useState(null);
+
+  const handleFileChange = (event) => {
+    setFile(event.target.files[0]);
+  };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!value.trim()) return; // Prevent sending empty messages
+    if (!value.trim() && !file) return;
 
-    addMessage(value); // Call function from `ChatRoom` to add message
+    let mediaUrl = null;
+    let mediaType = null;
+
+    if (file) {
+      mediaUrl = URL.createObjectURL(file);
+      mediaType = file.type.split("/")[0];
+    }
+
+    addMessage(value, file);
     setValue(""); // Clear input
+    setFile(null);
   };
 
   return (
@@ -23,6 +37,11 @@ const SendMessage = ({ addMessage }) => {
           className="w-full px-3 py-2 rounded-l-lg focus:outline-none bg-gray-100 text-gray-600"
           type="text"
           placeholder="Type a message..."
+        />
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="ml-2 bg-gray-200 text-gray-600 rounded-lg p-1"
         />
         <button
           type="submit"
