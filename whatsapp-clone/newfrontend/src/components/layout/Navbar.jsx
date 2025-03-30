@@ -35,7 +35,7 @@ const Navbar = () => {
 
   
   <ul className="space-y-4">
-    <li className="flex items-center space-x-2 cursor-pointer hover:text-gray-400"  onClick={() => { navigate("/profile"); setSidebarOpen(false); }}>
+    <li className="flex items-center space-x-2 cursor-pointer hover:text-gray-400"  onClick={() => { console.log("Navigating to profile..."); navigate("/profile"); setSidebarOpen(false); }}>
       <FiUser />
       <span>My Profile</span>
     </li>
@@ -67,3 +67,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+

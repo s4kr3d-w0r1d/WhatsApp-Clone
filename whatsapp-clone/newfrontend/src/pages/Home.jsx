@@ -37,7 +37,8 @@ const Home = () => {
       <Spline scene="https://prod.spline.design/xow0nplAxSHNmPaP/scene.splinecode" />
 
       <div className="absolute bottom-4 right-5 bg-black text-white p-2 rounded">
-        <button className="btn btn-ghost w-30">About Us</button>
+        <button className="btn btn-ghost w-30"
+         onClick={() => navigate("/about-us")}>About Us</button>
       </div>
     </div>
   );

@@ -2,77 +2,62 @@ import { useEffect, useState } from "react";
 import ChatBox from "./ChatBox";
 import SendMessage from "./SendMessage";
 import Navbar from "../layout/Navbar";
-import axios from "axios";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { useNavigate } from "react-router-dom";
 
 const ChatRoom = ({ selectedChat }) => {
-  const [messages, setMessages] = useState([]);
-  const senderId = sessionStorage.getItem("loggedInUserId");
-  const recipientId = selectedChat?.id;
-  const [stompClient, setStompClient] = useState(null);
+  const navigate = useNavigate();
 
-  const addMessage = async (text) => {
-    if (!senderId || !recipientId) {
-      console.error("Sender or recipient ID is missing!");
+  const [messages, setMessages] = useState([]);
+  const [stompClient, setStompClient] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [selectedFileType, setSelectedFileType] = useState("");
+
+  const senderId = Number(sessionStorage.getItem("loggedInUserId"));
+  const recipientId = Number(selectedChat?.id);
+
+  useEffect(() => {
+    if (!selectedChat || !senderId || !recipientId) {
+      console.log("Missing sender or recipient ID!");
       return;
     }
 
-    try {
-      const response = await axios.post(
-        `http://localhost:8080/messages?senderId=${senderId}&recipientId=${recipientId}&content=${encodeURIComponent(
-          text
-        )}`
-      );
+    console.log("Sender ID:", senderId);
+    console.log("Recipient ID:", recipientId);
 
-      const data = { recipientId, message: text };
+    fetch(
+      `http://localhost:8080/api/messages/chat-history?userId1=${senderId}&userId2=${recipientId}`
+    )
+      .then((response) => response.json())
+      .then((data) => setMessages(data))
+      .catch((error) => console.error("Error fetching chat history:", error));
 
-      setMessages((prevMessages) => [...prevMessages, response.data]);
+    console.log("Sender ID is", senderId);
+    console.log("Recipient ID is", recipientId);
 
-      if (stompClient && stompClient.connected) {
-        stompClient.publish({
-          destination: `/app/private/${recipientId}`,
-          body: JSON.stringify(data),
-        });
-
-        console.log("message sent on socket");
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
+    if (stompClient) {
+      console.log("Disconnecting previous WebSocket...");
+      stompClient.deactivate(); // Ensure the old connection is closed
     }
-  };
-
-  useEffect(() => {
-    if (!selectedChat || !senderId || !recipientId) return;
-
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get("http://localhost:8080/messages", {
-          params: { userId1: senderId, userId2: recipientId },
-        });
-        setMessages(response.data);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
-
-    fetchMessages();
 
     // WebSocket setup
     const socket = new SockJS("http://localhost:8080/ws");
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
-      onConnect: () => {
-        console.log("Connected to WebSocket");
+      onConnect: (frame) => {
+        console.log("Connected to WebSocket", frame);
 
-        // Subscribe to private messages
-        
-        client.subscribe(`/user/${recipientId}/queue/messages`, (message) => {
+        // Subscribe to private messages for recipientId
+        client.subscribe(`/topic/messages/${senderId}`, (message) => {
+          console.log(`Subscribed to /topic/messages/${senderId}`);
+
           const newMessage = JSON.parse(message.body);
-          if (newMessage) {
-            setMessages((prev) => [...prev, newMessage]);
-          }
+          console.log("Received message:", JSON.parse(message.body));
+          console.log("Received message is", newMessage);
+
+          setMessages((prev) => [...prev, newMessage]);
         });
       },
       onDisconnect: () => console.log("Disconnected from WebSocket"),
@@ -80,33 +65,130 @@ const ChatRoom = ({ selectedChat }) => {
 
     client.activate();
     setStompClient(client);
+    console.log("Attempting to connect to WebSocket...");
 
     return () => {
+      // client.deactivate();
+      // if (stompClient && stompClient.active) {
+      //   stompClient.deactivate();
+      //   console.log("WebSocket Disconnected!");
+      // }
       if (client) {
+        console.log("Cleaning up WebSocket...");
         client.deactivate();
       }
     };
-  });
+  }, [selectedChat]);
+
+  // **upload file**
+  const uploadFile = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/messages/upload-media",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to upload file");
+
+      return await response.text();
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      return null;
+    }
+  };
+
+  const sendMessage = async (text, file) => {
+    if (!senderId || !recipientId) {
+      console.error("Sender or recipient ID is missing!");
+      return;
+    }
+    let mediaUrl = null;
+    let mediaType = null;
+
+    if (file) {
+      setSelectedFile(file);
+      mediaUrl = await uploadFile(file);
+      if (!mediaUrl) {
+        console.error("Failed to upload file");
+        return;
+      }
+      mediaType = file.type.split("/")[0]; // "image", "video", "application", etc.
+    }
+
+    console.log("Before sending message:");
+    console.log("Content:", text);
+    console.log("Media URL:", mediaUrl ? mediaUrl : "No media attached");
+    console.log("Media Type:", mediaType ? mediaType : "No media type");
+
+    const chatMessage = {
+      senderId,
+      recipientId,
+      content: text || "",
+      mediaUrl,
+      mediaType,
+    };
+
+    const destination = mediaUrl
+      ? "/app/send-media-message"
+      : "/app/send-message";
+
+    // **Optimistically update UI before sending message**
+    const newMessage = {
+      id: Date.now(),
+      sender: { id: senderId },
+      recipient: { id: recipientId },
+      content: text,
+      mediaUrl,
+      mediaType,
+    };
+
+    console.log("File URL before sending:", newMessage.mediaUrl);
+    console.log("Message Payload:", newMessage);
+    console.log("Destination:", destination);
+
+    setMessages((prev) => [...prev, { ...newMessage, id: Date.now() }]);
+
+    // Send message via WebSocket
+    if (stompClient && stompClient.connected) {
+      stompClient.publish({
+        destination: destination,
+        body: JSON.stringify(chatMessage),
+      });
+      console.log("Message sent via WebSocket", chatMessage);
+    } else {
+      console.error("WebSocket is not connected!");
+    }
+  };
 
   if (!selectedChat) {
     return (
-      <div className="flex-1 flex items-center justify-center text-gray-400">
-        Select a chat to start messaging
+      <div className="flex-1 flex items-center justify-center h-screen text-gray-400">
+        <Navbar />
+        <p className="text-xl">Select a chat to start messaging</p>
       </div>
     );
   }
 
   return (
-    <>
+    <div>
       <Navbar />
-      <div className="p-4 border-b border-gray-700 bg-gray-900 text-white pt-11">
+      <div
+        key={selectedChat.id}
+        className="p-4 ursor-pointer hover:bg-gray-700 border-b border-gray-700 bg-gray-800 text-white pt-11"
+        onClick={() => navigate(`/profile/${selectedChat.id}`)}
+      >
         <h2 className="text-lg font-semibold">{selectedChat?.name}</h2>
       </div>
       <ChatBox messages={messages} />
-      <SendMessage addMessage={addMessage} />
-    </>
+      <SendMessage addMessage={sendMessage} />
+    </div>
   );
 };
 
 export default ChatRoom;
-
