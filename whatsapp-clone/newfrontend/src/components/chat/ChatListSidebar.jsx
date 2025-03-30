@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { FaSearch, FaEllipsisV } from "react-icons/fa";
 import { BsChatDotsFill } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const BASE_URL = "http://localhost:8080";
 
 const ChatListSidebar = ({ onSelectChat }) => {
   const [search, setSearch] = useState("");
@@ -16,19 +19,36 @@ const ChatListSidebar = ({ onSelectChat }) => {
 
     const fetchUsers = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:8080/profile/search?name=${search}`
+        console.log("Fetching users for search:", search);
+
+        const response = await axios.get(`${BASE_URL}/profile/search?name=${search}`);
+        console.log("User data fetched:", response.data);
+
+        const users = response.data;
+
+        // Fetch profile pictures for each user
+        const updatedUsers = await Promise.all(
+          users.map(async (user) => {
+            try {
+              const profileResponse = await axios.get(`${BASE_URL}/profile/${user.id}`);
+              console.log(`Profile data for ${user.id}:`, profileResponse.data);
+
+              return { ...user, profilePictureUrl: profileResponse.data.profilePictureUrl };
+            } catch (error) {
+              console.error(`Error fetching profile for user ${user.id}:`, error);
+              return { ...user, profilePictureUrl: "/default-avatar.jpg" };
+            }
+          })
         );
-        if (!response.ok) throw new Error("Failed to fetch users");
-        const data = await response.json();
-        setChats(data);
+
+        console.log("Final chat list with profile pictures:", updatedUsers);
+        setChats(updatedUsers);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
     };
 
     const delayDebounce = setTimeout(fetchUsers, 300);
-
     return () => clearTimeout(delayDebounce);
   }, [search]);
 
@@ -66,18 +86,23 @@ const ChatListSidebar = ({ onSelectChat }) => {
               onClick={() => {
                 onSelectChat(chat);
                 navigate("/chat");
+                console.log("Clicked chat:", chat);
+                console.log("Profile Picture URL:", chat.profilePictureUrl);
               }}
             >
+              {/* Display real profile photo */}
               <img
-                src={chat.img || "https://via.placeholder.com/50"}
+               src={chat.profilePictureUrl || "/default-avatar.jpg"} 
                 alt={chat.name}
                 className="w-12 h-12 rounded-full"
+                onError={(e) => {
+                  console.error("Image load error for:", chat.profilePictureUrl);
+                  e.target.src = "/default-avatar.jpg";
+                }}
               />
               <div className="ml-3 flex-1">
                 <h3 className="text-sm font-semibold">{chat.name}</h3>
-                <p className="text-xs text-gray-400 truncate">
-                  {chat.lastMessage || "No messages yet"}
-                </p>
+                <p className="text-xs text-gray-400 truncate">{chat.lastMessage || "No messages yet"}</p>
               </div>
               <div className="text-xs text-gray-400">
                 <span>{chat.time || ""}</span>
