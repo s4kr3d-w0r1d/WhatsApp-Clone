@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { FaSearch, FaEllipsisV } from "react-icons/fa";
 import { BsChatDotsFill } from "react-icons/bs";
+import { MdGroupAdd } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -11,54 +12,61 @@ const ChatListSidebar = ({ onSelectChat }) => {
   const [chats, setChats] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (search.trim() === "") {
-      setChats([]);
-      return;
+useEffect(() => {
+  if (search.trim() === "") {
+    setChats([]);
+    return;
+  }
+
+  const fetchSearchResults = async () => {
+    try {
+      const [userRes, groupRes] = await Promise.all([
+        axios.get(`${BASE_URL}/profile/search?name=${search}`),
+        axios.get(`${BASE_URL}/api/groups/search?name=${search}`),
+      ]);
+
+      const users = await Promise.all(userRes.data.map(async (user) => {
+        try {
+          const profileResponse = await axios.get(`${BASE_URL}/profile/${user.id}`);
+          return {
+            ...user,
+            type: "user",
+            profilePictureUrl: profileResponse.data.profilePictureUrl,
+          };
+        } catch {
+          return {
+            ...user,
+            type: "user",
+            profilePictureUrl: "/default-avatar.jpg",
+          };
+        }
+      }));
+
+      const groups = groupRes.data.map(group => ({
+        ...group,
+        type: "group",
+        profilePictureUrl: group.groupPictureUrl || "/group-avatar.jpeg",
+      }));
+
+      setChats([...users, ...groups]);
+    } catch (error) {
+      console.error("Search error:", error);
     }
+  };
 
-    const fetchUsers = async () => {
-      try {
-        console.log("Fetching users for search:", search);
+  const delayDebounce = setTimeout(fetchSearchResults, 300);
+  return () => clearTimeout(delayDebounce);
+}, [search]);
 
-        const response = await axios.get(`${BASE_URL}/profile/search?name=${search}`);
-        console.log("User data fetched:", response.data);
-
-        const users = response.data;
-
-        // Fetch profile pictures for each user
-        const updatedUsers = await Promise.all(
-          users.map(async (user) => {
-            try {
-              const profileResponse = await axios.get(`${BASE_URL}/profile/${user.id}`);
-              console.log(`Profile data for ${user.id}:`, profileResponse.data);
-
-              return { ...user, profilePictureUrl: profileResponse.data.profilePictureUrl };
-            } catch (error) {
-              console.error(`Error fetching profile for user ${user.id}:`, error);
-              return { ...user, profilePictureUrl: "/default-avatar.jpg" };
-            }
-          })
-        );
-
-        console.log("Final chat list with profile pictures:", updatedUsers);
-        setChats(updatedUsers);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    const delayDebounce = setTimeout(fetchUsers, 300);
-    return () => clearTimeout(delayDebounce);
-  }, [search]);
 
   return (
     <div className="w-1/3 h-screen bg-gray-900 text-white flex flex-col pt-7">
       <div className="p-4 flex justify-between items-center border-b border-gray-700">
         <h2 className="text-lg font-semibold">Chats</h2>
         <div className="flex gap-3">
-          <BsChatDotsFill className="text-xl cursor-pointer" />
-          <FaEllipsisV className="text-xl cursor-pointer" />
+        <MdGroupAdd className="text-xl cursor-pointer"   onClick={() => navigate("/create-group")} />
+        
+          {/* <FaEllipsisV className="text-xl cursor-pointer" /> */}
         </div>
       </div>
 

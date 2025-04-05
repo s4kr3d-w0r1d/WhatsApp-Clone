@@ -13,6 +13,9 @@ const ChatRoom = ({ selectedChat }) => {
   const [stompClient, setStompClient] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [youBlocked, setYouBlocked] = useState(false);
+  const [isGroupMember, setIsGroupMember] = useState(true);
+  const isGroup = selectedChat?.type === "group";
+
 
   // const [selectedFileType, setSelectedFileType] = useState("");
 
@@ -27,6 +30,7 @@ const ChatRoom = ({ selectedChat }) => {
 
     console.log("Sender ID:", senderId);
     console.log("Recipient ID:", recipientId);
+    console.log("Selected Chat:", selectedChat);
 
     fetch(
       `http://localhost:8080/api/messages/chat-history?userId1=${senderId}&userId2=${recipientId}`
@@ -104,6 +108,10 @@ const ChatRoom = ({ selectedChat }) => {
         client.deactivate();
       }
     };
+
+
+
+    
   }, [selectedChat]);
 
   // **upload file**
