@@ -38,10 +38,11 @@ const SendMessage = ({ addMessage }) => {
           type="text"
           placeholder="Type a message..."
         />
+        
         <input
           type="file"
           onChange={handleFileChange}
-          className="ml-2 bg-gray-200 text-gray-600 rounded-lg p-1"
+          className=" w-1/2 ml-2 bg-gray-200 text-gray-600 rounded-lg p-1"
         />
         <button
           type="submit"

@@ -9,10 +9,10 @@ import { useNavigate } from "react-router-dom";
 const ChatRoom = ({ selectedChat }) => {
   const navigate = useNavigate();
 
-  const [messages, setMessages] = useState([]);
+  const [chatMessages, setChatMessages] = useState([]);
   const [stompClient, setStompClient] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [selectedFileType, setSelectedFileType] = useState("");
+ // const [selectedFileType, setSelectedFileType] = useState("");
 
   const senderId = Number(sessionStorage.getItem("loggedInUserId"));
   const recipientId = Number(selectedChat?.id);
@@ -30,7 +30,7 @@ const ChatRoom = ({ selectedChat }) => {
       `http://localhost:8080/api/messages/chat-history?userId1=${senderId}&userId2=${recipientId}`
     )
       .then((response) => response.json())
-      .then((data) => setMessages(data))
+      .then((data) =>  setChatMessages((prev) => ({ ...prev, [recipientId]: data })))
       .catch((error) => console.error("Error fetching chat history:", error));
 
     console.log("Sender ID is", senderId);
@@ -51,13 +51,19 @@ const ChatRoom = ({ selectedChat }) => {
 
         // Subscribe to private messages for recipientId
         client.subscribe(`/topic/messages/${senderId}`, (message) => {
+          const newMessage = JSON.parse(message.body);
+          const chatId = newMessage.sender.id === senderId ? newMessage.recipient.id : newMessage.sender.id;
           console.log(`Subscribed to /topic/messages/${senderId}`);
 
-          const newMessage = JSON.parse(message.body);
           console.log("Received message:", JSON.parse(message.body));
           console.log("Received message is", newMessage);
 
-          setMessages((prev) => [...prev, newMessage]);
+          // setMessages((prev) => [...prev, newMessage]);
+          setChatMessages((prev) => ({
+            ...prev,
+            [chatId]: [...(prev[chatId] || []), newMessage],
+          }));
+
         });
       },
       onDisconnect: () => console.log("Disconnected from WebSocket"),
@@ -146,13 +152,18 @@ const ChatRoom = ({ selectedChat }) => {
       content: text,
       mediaUrl,
       mediaType,
+      timestamp: new Date().toISOString(), // Ensures proper date format
     };
 
     console.log("File URL before sending:", newMessage.mediaUrl);
     console.log("Message Payload:", newMessage);
     console.log("Destination:", destination);
 
-    setMessages((prev) => [...prev, { ...newMessage, id: Date.now() }]);
+    //setMessages((prev) => [...prev, { ...newMessage, id: Date.now() }]);
+    setChatMessages((prev) => ({
+      ...prev,
+      [recipientId]: [...(prev[recipientId] || []), newMessage],
+    }));
 
     // Send message via WebSocket
     if (stompClient && stompClient.connected) {
@@ -185,7 +196,8 @@ const ChatRoom = ({ selectedChat }) => {
       >
         <h2 className="text-lg font-semibold">{selectedChat?.name}</h2>
       </div>
-      <ChatBox messages={messages} />
+      <ChatBox messages={chatMessages[recipientId] || []} />
+
       <SendMessage addMessage={sendMessage} />
     </div>
   );
