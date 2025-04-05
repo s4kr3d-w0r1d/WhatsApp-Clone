@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiMenu, FiX, FiUser, FiSettings, FiLogOut } from "react-icons/fi";
+import { FiMenu, FiX, FiUser, FiSlash, FiLogOut } from "react-icons/fi";
 
 const Navbar = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -14,7 +14,7 @@ const Navbar = () => {
     }
 
     try {
-      const token = sessionStorage.getItem("token"); // Get JWT from session storage
+      const token = sessionStorage.getItem("token");
       console.log(token);
       if (!token) {
         console.log("No token found, user already logged out.");
@@ -24,7 +24,7 @@ const Navbar = () => {
 
       console.log("Logging out...");
 
-      // Call backend logout API
+      // backend logout API
       const response = await fetch("http://localhost:8080/auth/logout", {
         method: "POST",
         headers: {
@@ -50,7 +50,7 @@ const Navbar = () => {
   return (
     <div className="navbar bg-neutral text-neutral-content w-full fixed top-0 left-0 flex justify-between h-10 min-h-0 px-4">
       <button className="btn btn-ghost text-xl pl-8">Whatsapp</button>
-      
+
       {/* Top Navbar Logout */}
       <button className="btn btn-sm " onClick={logout}>
         Logout
@@ -92,9 +92,15 @@ const Navbar = () => {
             <span>My Profile</span>
           </li>
 
-          <li className="flex items-center space-x-2 cursor-pointer hover:text-gray-400">
-            <FiSettings />
-            <span>Settings</span>
+          <li
+            className="flex items-center space-x-2 cursor-pointer hover:text-gray-400"
+            onClick={() => {
+              navigate("/blocklist");
+              setSidebarOpen(false);
+            }}
+          >
+            <FiSlash />
+            <span>BlockList</span>
           </li>
 
           {/* Sidebar Logout Button */}

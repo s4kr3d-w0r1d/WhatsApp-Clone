@@ -38,7 +38,7 @@ const SendMessage = ({ addMessage }) => {
           type="text"
           placeholder="Type a message..."
         />
-        
+
         <input
           type="file"
           onChange={handleFileChange}

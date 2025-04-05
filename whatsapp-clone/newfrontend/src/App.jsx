@@ -9,6 +9,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 import ChatListSidebar from "./components/chat/ChatListSidebar";
 import { useState } from "react";
 import AboutUs from "./pages/AboutUs";
+import BlockList from "./pages/BlockList";
 
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
@@ -30,6 +31,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/profile" element={<MyProfile />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
+          <Route path="/blocklist" element={<BlockList />} />
 
         
           <Route element={<PrivateRoute />}>
