@@ -10,11 +10,11 @@ import ChatListSidebar from "./components/chat/ChatListSidebar";
 import { useState } from "react";
 import AboutUs from "./pages/AboutUs";
 import BlockList from "./pages/BlockList";
+import CreateGroup from "./pages/CreateGroup";
 
 function App() {
   const [selectedChat, setSelectedChat] = useState(null);
   const location = useLocation();
-  
 
   return (
     <div className="flex h-screen">
@@ -33,9 +33,13 @@ function App() {
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/blocklist" element={<BlockList />} />
 
-        
+          <Route path="/create-group" element={<CreateGroup />} />
+
           <Route element={<PrivateRoute />}>
-            <Route path="/chat" element={<ChatRoom selectedChat={selectedChat} />} />
+            <Route
+              path="/chat"
+              element={<ChatRoom selectedChat={selectedChat} />}
+            />
           </Route>
         </Routes>
       </div>
