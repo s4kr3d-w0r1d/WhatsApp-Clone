@@ -47,7 +47,7 @@ public class SecurityConfig {
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp.policyDirectives(
                                 "default-src 'self'; " +
-                                        "connect-src 'self' ws://localhost:8080 ws://127.0.0.1:8080; " + // ✅ Allow WebSockets
+                                        "connect-src 'self' ws://localhost:8080 ws://127.0.0.1:8080; " + // Allow WebSockets
                                         "script-src 'self' 'unsafe-inline'; " +
                                         "style-src 'self' 'unsafe-inline'; " +
                                         "img-src 'self' data:;"
