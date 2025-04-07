@@ -47,6 +47,5 @@
 
 ### Team Members
 
-1. Saksham Madan (24124040) -> Complete Backend including chatting logics, user profile and blocking, media sharing, configurations.
+1. Saksham Madan (24124040) -> Complete Backend including authorisation, chatting logics, user profile and blocking, media sharing, configurations.
 2. Vaishnavi (24124048) -> Complete Frontend including API integration between Frontend and Backend.
-3. Tarun Agrawal (24124047) -> User Authentication (Backend and Frontend) using JWT.
